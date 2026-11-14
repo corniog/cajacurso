@@ -1,0 +1,99 @@
+# Guía: publicar CajaCurso gratis (GitHub + Supabase + Vercel)
+
+Todo se hace desde el navegador. No necesitas instalar nada.
+
+**Tiempo estimado:** 30–40 minutos.
+**Cuentas que necesitas (gratis):** GitHub, Supabase y Vercel (entra a Vercel con "Continue with GitHub").
+
+---
+
+## Paso 1 · Subir el código a GitHub
+**Opción fácil:** crea un repositorio **privado y vacío** en github.com/new (nombre sugerido: `cajacurso`, sin README) y pídele a Claude que suba el proyecto ahí.
+
+**Opción manual:** descomprime `cajacurso-proyecto.zip`. En tu repositorio nuevo elige *uploading an existing file* y arrastra el contenido. GitHub acepta ~100 archivos por carga, así que hazlo en 3 tandas (por ejemplo: `app`, luego `components` + `lib`, luego el resto). Asegúrate de subir también las carpetas ocultas `.github`.
+*Nunca subas un archivo `.env`.*
+
+## Paso 2 · Crear la base de datos en Supabase
+1. En supabase.com → **New project**. Pon un nombre, una **contraseña de base de datos** (usa solo letras y números y guárdala) y la región **South America (São Paulo)**. Espera 1–2 minutos.
+2. Menú izquierdo → **SQL Editor** → **New query**. Abre el archivo `supabase-setup.sql`, copia **todo** su contenido, pégalo y pulsa **Run**. Debe decir *Success*.
+3. Comprueba: en **Table Editor** deben aparecer 10 tablas, y en **Storage** un bucket llamado `boletas`.
+4. Junta tres datos (los usarás en el Paso 3):
+   - **DATABASE_URL:** botón **Connect** (arriba) → pestaña *Transaction pooler* → copia la cadena (puerto **6543**) y reemplaza `[YOUR-PASSWORD]` por tu contraseña.
+   - **SUPABASE_URL:** *Project Settings → API* → "Project URL".
+   - **SUPABASE_SERVICE_KEY:** *Project Settings → API Keys* → la clave **secret** (o `service_role`). **Es secreta: no la compartas ni la subas a GitHub.**
+
+## Paso 3 · Publicar en Vercel
+1. vercel.com → **Add New… → Project** → elige tu repositorio `cajacurso` → **Import**. Vercel detecta Next.js solo.
+2. Antes de pulsar Deploy, abre **Environment Variables** y agrega:
+
+| Variable | Valor |
+|---|---|
+| `DATABASE_URL` | la cadena del Paso 2 (puerto 6543) |
+| `AUTH_SECRET` | 40+ letras y números al azar (usa el "sugerir contraseña" del navegador) |
+| `SUPABASE_URL` | Project URL |
+| `SUPABASE_SERVICE_KEY` | clave secret |
+| `SUPABASE_BUCKET` | `boletas` |
+| `ADMIN_EMAILS` | **tu correo** de administrador (varios: separados por coma) |
+| `TRANSFER_INFO` | datos para transferir. Ej: `Banco Estado\nCuenta Vista 123456789\nRUT 11.111.111-1\nCorreo pagos@tudominio.cl` (`\n` = salto de línea) |
+| `CRON_SECRET` | otro texto al azar (activa el recordatorio diario y mantiene activa la base) |
+| `APP_URL` | por ahora `https://cajacurso.vercel.app` (se corrige abajo) |
+
+3. Pulsa **Deploy**. Al terminar, Vercel te muestra tu dirección (por ejemplo `https://cajacurso-abc.vercel.app`).
+4. Ve a *Settings → Environment Variables*, cambia `APP_URL` por tu dirección real y haz **Redeploy** (pestaña Deployments → ⋯ → Redeploy). Esto hace que los enlaces, QR y correos apunten bien.
+
+## Paso 4 · Primer uso (importante)
+1. Abre tu dirección y **regístrate primero con el correo que pusiste en `ADMIN_EMAILS`**. Hazlo antes de compartir el enlace con nadie: quien se registre primero con ese correo queda como administrador.
+2. Arriba aparecerá el botón **🛡️ Administración**.
+3. Crea un curso de prueba, agrega alumnos, registra pagos y revisa los QR en *Accesos y QR*.
+
+---
+
+## Cómo controlas los planes (panel de administración)
+En **🛡️ Administración** puedes:
+- **Solicitudes:** cuando un tesorero elige *transferencia* y pulsa "Ya transferí", te llega aquí (y por correo si configuras SMTP). Revisas tu banco y pulsas **Aprobar y activar**: el Pro queda activo y puedes anotar el monto real.
+- **Cursos y planes:** busca un curso por colegio, curso, código o correo y **suma días de Pro** (30, 90, 365 días…), **fija una fecha exacta**, **quita el Pro** o permite otra prueba gratuita. Sirve para cortesías, casos especiales o pagos en efectivo.
+- **Historial de pagos:** todo movimiento (prueba, Mercado Pago, transferencia, manual) con fecha, monto y nota.
+- **Resumen:** usuarios, cursos, cursos con Pro e ingresos.
+
+Opciones de pago que ve el tesorero en *Plan e integraciones*: **Mercado Pago** (automático, cuando lo configures) o **transferencia** (con tu aprobación). Siempre puedes activar a mano.
+
+---
+
+## Costos y límites (hoy: $0)
+| Servicio | Gratis incluye | Ojo |
+|---|---|---|
+| **GitHub** | Repos privados, 2.000 min/mes de compilación | — |
+| **Supabase** | 500 MB base de datos, 1 GB de archivos | Pausa el proyecto tras 1 semana sin uso. El recordatorio diario (cron) lo mantiene activo; si se pausa, pulsa **Restore** en el panel |
+| **Vercel (Hobby)** | Hosting y cron diario | El plan gratis es para uso **personal / no comercial**. Mientras pruebes o uses sin cobrar, bien. **Cuando empieces a cobrar suscripciones** debes pasar a Vercel Pro (~US$20/mes) o mover el sitio a otro hosting (se puede, el proyecto también corre con Docker). Verifica sus términos vigentes en vercel.com/legal/terms |
+| **Mercado Pago** | Sin mensualidad | Comisión por cada venta |
+| **Correos** | Brevo gratis: 300/día | Opcional (variables `SMTP_*`) |
+
+---
+
+## APK de Android y .exe de Windows
+Ambos son envoltorios que abren tu sitio, así que se actualizan solos.
+1. En GitHub: **Actions → "Compilar apps (Windows y Android)" → Run workflow** → escribe tu dirección `https://...vercel.app`.
+2. Espera ~10–15 min y descarga los resultados (sección *Artifacts*): `CajaCurso-Windows` (.exe) y `CajaCurso-Android` (.apk).
+3. Para compartirlos: crea un repositorio **público** vacío (ej. `cajacurso-descargas`) → **Releases → Create a new release** → arrastra el .apk y el .exe → publícalo. Copia el enlace de cada archivo.
+4. En Vercel agrega `APK_URL` y `WINDOWS_URL` con esos enlaces y haz Redeploy. Aparecerán en `tu-sitio/descargas`.
+
+**Sin compilar nada:** desde `/descargas` cualquiera puede **instalar la web como app** (botón "Instalar", o el ícono de instalar en la barra del navegador). En Windows y Android funciona igual que una app.
+
+Avisos normales: Windows mostrará "editor desconocido" y Android pedirá permitir instalar desde orígenes desconocidos, porque no están firmadas.
+
+---
+
+## Actualizar después
+- **Cambios de código:** se suben a GitHub y Vercel publica solo.
+- **Cambios en la base de datos:** Claude te entregará un archivo `.sql` nuevo para pegar en el SQL Editor de Supabase.
+
+## Si algo falla
+| Síntoma | Causa probable |
+|---|---|
+| Error al registrarse / página 500 | No se ejecutó `supabase-setup.sql`, o `DATABASE_URL` está mal (contraseña con símbolos raros, o falta el puerto 6543) |
+| No aparece "Administración" | `ADMIN_EMAILS` no coincide exactamente con tu correo, o falta Redeploy |
+| La boleta no se sube | Revisa `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` y que exista el bucket `boletas` |
+| Los QR/enlaces apuntan a localhost | `APP_URL` mal configurada o falta Redeploy |
+| "Unable to connect" tras días sin uso | Supabase pausó el proyecto → Restore |
+
+Ante cualquier error, copia el mensaje (en Vercel: *Deployments → View logs*) y envíaselo a Claude.

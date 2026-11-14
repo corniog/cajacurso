@@ -1,0 +1,17 @@
+{
+  "appId": "cl.cajacurso.app",
+  "appName": "CajaCurso",
+  "webDir": "www",
+  "server": {
+    "url": "http://localhost:3000/app",
+    "cleartext": true,
+    "allowNavigation": [
+      "*.mercadopago.cl",
+      "*.mercadopago.com",
+      "accounts.google.com"
+    ]
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

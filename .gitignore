@@ -1,0 +1,10 @@
+node_modules
+.next
+uploads
+.env
+.env.local
+*.log
+mobile/android
+mobile/node_modules
+desktop/node_modules
+desktop/dist

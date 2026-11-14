@@ -1,0 +1,51 @@
+"use server";
+import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { db, schema } from "@/lib/db";
+import {
+  hashPassword, verifyPassword, createSession, destroySession,
+  loginKey, isLoginBlocked, recordLoginFailure, clearLoginFailures,
+} from "@/lib/auth";
+
+export type FormState = { error?: string } | undefined;
+
+const registerSchema = z.object({
+  name: z.string().trim().min(2, "Escribe tu nombre").max(80),
+  email: z.string().trim().toLowerCase().email("Correo no válido"),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").max(100),
+});
+
+export async function register(_: FormState, fd: FormData): Promise<FormState> {
+  const parsed = registerSchema.safeParse(Object.fromEntries(fd));
+  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  const { name, email, password } = parsed.data;
+  const [exists] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.email, email)).limit(1);
+  if (exists) return { error: "Ese correo ya está registrado. Inicia sesión." };
+  const [u] = await db.insert(schema.users).values({ name, email, passwordHash: await hashPassword(password) }).returning();
+  await createSession(u.id);
+  redirect("/app");
+}
+
+export async function login(_: FormState, fd: FormData): Promise<FormState> {
+  const email = String(fd.get("email") ?? "").trim().toLowerCase();
+  const password = String(fd.get("password") ?? "");
+  if (!email || !password) return { error: "Ingresa tu correo y contraseña" };
+  const key = await loginKey(email);
+  if (await isLoginBlocked(key)) return { error: "Demasiados intentos. Espera 15 minutos e inténtalo de nuevo." };
+  const [u] = await db.select().from(schema.users).where(eq(schema.users.email, email)).limit(1);
+  // Se compara siempre contra un hash para no revelar si el correo existe por tiempo de respuesta
+  const ok = await verifyPassword(password, u?.passwordHash ?? "$2b$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvalidinv");
+  if (!u || !ok) {
+    await recordLoginFailure(key);
+    return { error: "Correo o contraseña incorrectos" };
+  }
+  await clearLoginFailures(key);
+  await createSession(u.id);
+  redirect("/app");
+}
+
+export async function logout() {
+  await destroySession();
+  redirect("/");
+}

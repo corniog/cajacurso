@@ -1,0 +1,47 @@
+# Levanta la plataforma completa: base de datos + aplicación.
+# Uso: copia .env.example a .env, edítalo y ejecuta:  docker compose up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cajacurso
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+      POSTGRES_DB: cajacurso
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cajacurso"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://cajacurso:${DB_PASSWORD}@db:5432/cajacurso
+      AUTH_SECRET: ${AUTH_SECRET:?Define AUTH_SECRET en .env}
+      APP_URL: ${APP_URL:?Define APP_URL en .env}
+      CRON_SECRET: ${CRON_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      MP_PLATFORM_ACCESS_TOKEN: ${MP_PLATFORM_ACCESS_TOKEN:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      APK_URL: ${APK_URL:-}
+      WINDOWS_URL: ${WINDOWS_URL:-}
+    volumes:
+      - uploads:/data/uploads
+    ports:
+      - "3000:3000"
+
+volumes:
+  dbdata:
+  uploads:

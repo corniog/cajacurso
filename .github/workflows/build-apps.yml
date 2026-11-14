@@ -1,0 +1,52 @@
+name: Compilar apps (Windows y Android)
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_url:
+        description: "URL pública de la plataforma (https://...)"
+        required: true
+  push:
+    tags: ["v*"]
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: node scripts/make-icons.mjs
+      - run: node scripts/set-app-url.mjs "${{ inputs.app_url || vars.APP_URL }}"
+      - run: npm install
+        working-directory: desktop
+      - run: npm run dist
+        working-directory: desktop
+      - uses: actions/upload-artifact@v4
+        with: { name: CajaCurso-Windows, path: desktop/dist/*.exe }
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - run: node scripts/make-icons.mjs
+      - run: node scripts/set-app-url.mjs "${{ inputs.app_url || vars.APP_URL }}"
+      - run: npm install
+        working-directory: mobile
+      - run: npx cap add android
+        working-directory: mobile
+      - run: npx capacitor-assets generate --android
+        working-directory: mobile
+      - run: npx cap sync android
+        working-directory: mobile
+      - run: ./gradlew assembleDebug
+        working-directory: mobile/android
+      - uses: actions/upload-artifact@v4
+        with: { name: CajaCurso-Android, path: mobile/android/app/build/outputs/apk/debug/*.apk }
