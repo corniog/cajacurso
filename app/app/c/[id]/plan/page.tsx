@@ -11,6 +11,8 @@ import ActionForm from "@/components/ActionForm";
 import ActionButton from "@/components/ActionButton";
 import { startTrialAction, subscribe, saveMpToken, removeMpToken, disconnectDriveAction, saveReminders, sendRemindersNow, addMember, removeMember, requestManualPlan, cancelManualRequest } from "@/app/actions/pro";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Plan e integraciones" };
 
 export default async function PlanPage({ params, searchParams }: PageProps<"/app/c/[id]/plan">) {

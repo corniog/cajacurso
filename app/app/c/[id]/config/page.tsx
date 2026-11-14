@@ -3,6 +3,8 @@ import { updateCourse, deleteCourse } from "@/app/actions/course";
 import ActionForm from "@/components/ActionForm";
 import CourseFields from "@/components/CourseFields";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Configuración" };
 
 export default async function ConfigPage({ params }: PageProps<"/app/c/[id]/config">) {

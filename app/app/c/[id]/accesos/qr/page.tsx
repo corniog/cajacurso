@@ -6,6 +6,8 @@ import { qrDataUrl } from "@/lib/qr";
 import PrintButton from "@/components/PrintButton";
 import { BRAND } from "@/lib/brand";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Hoja de QR" };
 
 export default async function QrSheetPage({ params }: PageProps<"/app/c/[id]/accesos/qr">) {

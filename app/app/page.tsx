@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/auth";
 import { isPro } from "@/lib/plans";
 import { clp } from "@/lib/finance";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Mis cursos" };
 
 export default async function Dashboard() {

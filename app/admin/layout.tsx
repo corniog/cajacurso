@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Logo from "@/components/Logo";
 import { requireAdmin } from "@/lib/admin";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Administración", robots: { index: false, follow: false } };
 
 const NAV = [["/admin", "Resumen"], ["/admin/solicitudes", "Solicitudes"], ["/admin/cursos", "Cursos y planes"], ["/admin/historial", "Historial de pagos"]];

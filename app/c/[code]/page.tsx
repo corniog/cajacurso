@@ -6,6 +6,8 @@ import { getCourseByCode } from "@/lib/public-data";
 import { loadCourseData } from "@/lib/course-data";
 import { MONTH_SHORT, MONTH_NAMES, clp } from "@/lib/finance";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Estado del curso", robots: { index: false, follow: false } };
 
 const CELL = { pagado: "bg-emerald-100 text-emerald-900", abonado: "bg-amber-100 text-amber-900", pendiente: "bg-slate-100 text-slate-600", no_aplica: "text-slate-300" } as const;

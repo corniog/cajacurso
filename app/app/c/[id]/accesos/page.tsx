@@ -7,6 +7,8 @@ import ActionButton from "@/components/ActionButton";
 import CopyButton from "@/components/CopyButton";
 import { isPro } from "@/lib/plans";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Accesos y QR" };
 
 export default async function AccessPage({ params }: PageProps<"/app/c/[id]/accesos">) {

@@ -4,6 +4,8 @@ import { clp } from "@/lib/finance";
 import AdminRequests from "@/components/AdminRequests";
 import { adminEmails } from "@/lib/admin";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminHome() {
   const now = new Date();
   const since = new Date(Date.now() - 30 * 86400000);

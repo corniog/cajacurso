@@ -10,6 +10,8 @@ import { loadCourseData } from "@/lib/course-data";
 import { clp } from "@/lib/finance";
 import { isPro } from "@/lib/plans";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Vista de directivos", robots: { index: false, follow: false } };
 
 export default async function DirectivePage({ params }: PageProps<"/d/[code]">) {

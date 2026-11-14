@@ -2,6 +2,8 @@ import { desc, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { clp } from "@/lib/finance";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Historial de pagos" };
 const STATUS = { pending: "Pendiente", active: "Activo", cancelled: "Cancelado", expired: "Vencido" } as const;
 const TONE = { pending: "bg-amber-100 text-amber-900", active: "bg-emerald-100 text-emerald-900", cancelled: "bg-slate-100 text-slate-600", expired: "bg-slate-100 text-slate-600" } as const;

@@ -6,6 +6,8 @@ import { grantPro, setProUntil, revokePro, resetTrial } from "@/app/actions/admi
 import { isPro } from "@/lib/plans";
 import { clp } from "@/lib/finance";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Cursos y planes" };
 
 export default async function CoursesAdminPage({ searchParams }: PageProps<"/admin/cursos">) {

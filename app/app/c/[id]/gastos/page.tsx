@@ -8,6 +8,8 @@ import { EXPENSE_CATEGORIES, clp } from "@/lib/finance";
 import { todayISO } from "@/lib/util";
 import { isPro } from "@/lib/plans";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Gastos" };
 
 export default async function ExpensesPage({ params }: PageProps<"/app/c/[id]/gastos">) {

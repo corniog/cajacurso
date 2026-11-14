@@ -11,6 +11,8 @@ import { sendStatementOne, sendStatementsAll } from "@/app/actions/pro";
 import ActionNotice from "@/components/ActionNotice";
 import type { Student, Course } from "@/lib/db/schema";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Alumnos" };
 
 function StudentFields({ s, course }: { s?: Student; course: Course }) {

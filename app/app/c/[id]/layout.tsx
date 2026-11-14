@@ -3,6 +3,8 @@ import CourseNav from "@/components/CourseNav";
 import { requireCourse } from "@/lib/auth";
 import { isPro } from "@/lib/plans";
 
+export const dynamic = "force-dynamic";
+
 export default async function CourseLayout({ children, params }: LayoutProps<"/app/c/[id]">) {
   const { id } = await params;
   const { course, role } = await requireCourse(id);

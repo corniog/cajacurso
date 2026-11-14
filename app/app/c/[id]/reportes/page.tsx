@@ -5,6 +5,8 @@ import { isPro } from "@/lib/plans";
 import PrintButton from "@/components/PrintButton";
 import ReportView from "@/components/ReportView";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Reportes" };
 
 export default async function ReportsPage({ params }: PageProps<"/app/c/[id]/reportes">) {

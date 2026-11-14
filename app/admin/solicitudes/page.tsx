@@ -1,5 +1,7 @@
 import AdminRequests from "@/components/AdminRequests";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Solicitudes" };
 
 export default function RequestsPage() {

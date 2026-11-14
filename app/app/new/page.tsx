@@ -2,6 +2,8 @@ import ActionForm from "@/components/ActionForm";
 import CourseFields from "@/components/CourseFields";
 import { createCourse } from "@/app/actions/course";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Crear curso" };
 
 export default function NewCoursePage() {

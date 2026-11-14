@@ -3,6 +3,8 @@ import { loadCourseData, appUrl } from "@/lib/course-data";
 import { clp, MONTH_NAMES } from "@/lib/finance";
 import CopyButton from "@/components/CopyButton";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Resumen" };
 
 function Kpi({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {

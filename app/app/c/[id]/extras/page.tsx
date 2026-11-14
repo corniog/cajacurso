@@ -9,6 +9,8 @@ import { todayISO } from "@/lib/util";
 import { isPro } from "@/lib/plans";
 import { PLANS } from "@/lib/brand";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Ingresos extra" };
 
 export default async function ExtrasPage({ params }: PageProps<"/app/c/[id]/extras">) {

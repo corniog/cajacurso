@@ -9,6 +9,8 @@ import { getStudentByToken } from "@/lib/public-data";
 import { buildRows, clp, MONTH_NAMES } from "@/lib/finance";
 import { isPro } from "@/lib/plans";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Ficha del apoderado", robots: { index: false, follow: false } };
 
 const BADGE = {

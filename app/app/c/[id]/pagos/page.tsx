@@ -2,6 +2,8 @@ import { requireCourse } from "@/lib/auth";
 import { loadCourseData } from "@/lib/course-data";
 import PaymentGrid from "@/components/PaymentGrid";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = { title: "Pagos" };
 
 export default async function PaymentsPage({ params }: PageProps<"/app/c/[id]/pagos">) {

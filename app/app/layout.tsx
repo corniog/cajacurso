@@ -4,6 +4,8 @@ import { logout } from "@/app/actions/auth";
 import { isAdminEmail } from "@/lib/admin";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function PanelLayout({ children }: LayoutProps<"/app">) {
   const user = await requireUser();
   return (
