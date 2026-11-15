@@ -4,6 +4,7 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
 import * as schema from "@/lib/db/schema";
+import { db } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -54,5 +55,21 @@ export async function GET(req: Request) {
     variant("5_drizzle_tabla_users", {}, (c) => drizzle(c, { schema }).select({ id: schema.users.id }).from(schema.users).limit(1)),
     variant("6_config_de_la_app", { idle_timeout: 20, connect_timeout: 15 }, (c) => c`select count(*)::int as n from users`),
   ]);
+
+  // Pruebas con el cliente real de la aplicación (db)
+  const real = async (name: string, f: () => Promise<unknown>) => {
+    const t = t0();
+    try { const r = await withTimeout(f(), 9000); out[name] = `ok ${t0() - t}ms ${JSON.stringify(r).slice(0, 80)}`; }
+    catch (e) { out[name] = `ERROR ${t0() - t}ms ${clean(e)}`; }
+  };
+  await real("A_db_select_users", () => db.select({ id: schema.users.id }).from(schema.users).limit(1));
+  await real("B_db_8_en_paralelo", () => Promise.all(Array.from({ length: 8 }, () => db.select({ id: schema.users.id }).from(schema.users).limit(1))));
+  await real("C_db_insert_curso_y_deshacer", async () => {
+    const [u] = await db.select({ id: schema.users.id }).from(schema.users).limit(1);
+    const id = crypto.randomUUID();
+    await db.insert(schema.courses).values({ id, ownerId: u.id, school: "diag", name: "diag", year: 2027, monthlyFee: 1, months: [3, 4], code: "DIAG" + Date.now() % 100000 });
+    await db.delete(schema.courses).where(sql`id = ${id}`);
+    return "insertado y borrado";
+  });
   return NextResponse.json({ vercel: !!process.env.VERCEL, region: process.env.VERCEL_REGION, host: u.hostname, out });
 }
