@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireCourse } from "@/lib/auth";
 import { loadCourseData, appUrl, ensureStudentCodes } from "@/lib/course-data";
 import { addStudent, updateStudent, importStudents, setStudentActive, deleteStudent } from "@/app/actions/course";
@@ -87,7 +88,7 @@ export default async function StudentsPage({ params }: PageProps<"/app/c/[id]/al
             {rows.map((r) => {
               const s = r.student;
               const ficha = `${base}/f/${s.token}`;
-              const msg = `Hola${s.guardianName ? " " + s.guardianName.split(" ")[0] : ""}, te comparto la ficha de pagos de ${s.firstName} del curso ${course.name}: ${ficha}`;
+              const msg = `Hola${s.guardianName ? " " + s.guardianName.split(" ")[0] : ""}, te comparto la ficha de pagos de ${s.firstName} del curso ${course.name}: ${ficha}\nPuedes descargar el estado de cuenta en PDF aquí: ${base}/api/f/${s.token}/pdf`;
               const wa = whatsappLink(s.guardianPhone, msg);
               return (
                 <li key={s.id} className={`px-5 py-3 ${s.active ? "" : "opacity-60"}`}>
@@ -105,7 +106,17 @@ export default async function StudentsPage({ params }: PageProps<"/app/c/[id]/al
                       {canWrite && pro && s.guardianEmail && (
                         <ActionNotice label="✉️ Enviar PDF" action={sendStatementOne.bind(null, id, s.id)} />
                       )}
-                      {wa && <a className="btn-ghost !px-3 !py-1.5" href={wa} target="_blank" rel="noopener noreferrer">WhatsApp</a>}
+                      {canWrite && pro && !s.guardianEmail && (
+                        <span className="text-xs text-muted" title="Edita al alumno y agrega el correo del apoderado">✉️ Falta el correo</span>
+                      )}
+                      {canWrite && !pro && (
+                        <Link href={`/app/c/${id}/plan`} className="text-xs text-muted underline" title="El envío de PDF por correo es del Plan Pro">✉️ PDF por correo (Pro)</Link>
+                      )}
+                      {wa ? (
+                        <a className="btn-ghost !px-3 !py-1.5" href={wa} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                      ) : (
+                        <span className="text-xs text-muted" title="Edita al alumno y agrega el teléfono del apoderado">WhatsApp: falta el teléfono</span>
+                      )}
                     </div>
                   </div>
                   {canWrite && (
