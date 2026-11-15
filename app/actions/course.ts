@@ -70,7 +70,6 @@ export async function updateCourse(courseId: string, _: ActionState, fd: FormDat
     await db.update(schema.courses).set({
       school: d.school, name: d.name, year: d.year, monthlyFee: d.monthlyFee,
       months: monthRange(d.startMonth, d.endMonth),
-      publicStudents: fd.get("publicStudents") === "on",
       publicExpenses: fd.get("publicExpenses") === "on",
     }).where(eq(schema.courses.id, courseId));
     refresh(courseId);

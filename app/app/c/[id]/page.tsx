@@ -36,7 +36,7 @@ export default async function SummaryPage({ params }: PageProps<"/app/c/[id]">) 
       <div className="card space-y-3">
         <h2 className="font-bold">Comparte el curso con los apoderados</h2>
         <p className="text-sm text-muted">
-          Los apoderados entran con el código (sin crear cuenta) y ven el estado general. La ficha individual de cada alumno se envía desde la sección Alumnos.
+          Los apoderados entran con el código (sin crear cuenta) y ven solo un resumen del curso (totales, gráficos y gastos), nunca a otros alumnos. La ficha individual de cada alumno se envía desde la sección Alumnos.
         </p>
         <div className="flex flex-wrap items-center gap-3">
           <code className="rounded-lg bg-brand-soft px-3 py-2 text-base font-bold tracking-wider text-brand-dark">{course.code}</code>

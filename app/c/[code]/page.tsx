@@ -1,80 +1,213 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { eq } from "drizzle-orm";
 import Logo from "@/components/Logo";
+import { Donut, LineChart, BarChart, KPI_COLORS as C } from "@/components/KpiCharts";
+import { db, schema } from "@/lib/db";
 import { getCourseByCode } from "@/lib/public-data";
 import { loadCourseData } from "@/lib/course-data";
+import { buildKpis } from "@/lib/kpi";
 import { MONTH_SHORT, MONTH_NAMES, clp } from "@/lib/finance";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Estado del curso", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Resumen del curso", robots: { index: false, follow: false } };
 
-const CELL = { pagado: "bg-emerald-100 text-emerald-900", abonado: "bg-amber-100 text-amber-900", pendiente: "bg-slate-100 text-slate-600", no_aplica: "text-slate-300" } as const;
-const MARK = { pagado: "✓", abonado: "$", pendiente: "·", no_aplica: "—" } as const;
+const pct = (n: number) => `${n.toFixed(1).replace(".", ",")}%`;
+const dmy = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)}`;
 
+function Stat({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
+  return (
+    <div className="card !p-4">
+      <p className="text-sm text-muted">{label}</p>
+      <p className={`mt-1 text-2xl font-bold ${tone === "good" ? "text-emerald-700" : tone === "bad" ? "text-red-700" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+function Progress({ value, color }: { value: number; color: string }) {
+  return (
+    <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-valuenow={Math.round(value)} aria-valuemin={0} aria-valuemax={100}>
+      <div className="h-full rounded-full" style={{ width: `${value}%`, background: color }} />
+    </div>
+  );
+}
+
+/**
+ * Vista pública del curso para apoderados: SOLO indicadores agregados.
+ * No incluye nombres, pagos ni deudas de ningún alumno (eso lo ven únicamente el tesorero y la directiva).
+ */
 export default async function PublicCoursePage({ params }: PageProps<"/c/[code]">) {
   const { code } = await params;
   const course = await getCourseByCode(code);
   if (!course) notFound();
-  const { rows, summary: s, expenses } = await loadCourseData(course);
-  const visible = rows.filter((r) => r.student.active);
+  const [{ rows, summary: s, expenses, extras }, [owner]] = await Promise.all([
+    loadCourseData(course),
+    db.select({ name: schema.users.name }).from(schema.users).where(eq(schema.users.id, course.ownerId)).limit(1),
+  ]);
+  const k = buildKpis(course, rows, s, expenses, extras);
+  const mName = MONTH_NAMES[k.curMonth - 1] ?? "";
+  const labels = k.series.map((x) => MONTH_SHORT[x.month - 1]);
 
   return (
-    <main className="mx-auto w-full max-w-4xl flex-1 space-y-5 px-4 py-8">
+    <main className="mx-auto w-full max-w-5xl flex-1 space-y-6 px-4 py-8">
       <Logo />
-      <div>
-        <h1 className="text-2xl font-bold">{course.name} · {course.year}</h1>
-        <p className="text-muted">{course.school} · Cuota mensual {clp(course.monthlyFee)}</p>
-      </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        {[["Recaudado", clp(s.collected + s.extras)], ["Gastos", clp(s.expenses)], ["Disponible", clp(s.balance)]].map(([k, v]) => (
-          <div key={k} className="card !p-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted">{k}</p><p className="mt-1 text-lg font-bold sm:text-2xl">{v}</p></div>
-        ))}
-      </div>
-
-      {course.publicStudents && (
-        <div className="card !p-0 overflow-x-auto">
-          <h2 className="border-b border-line px-5 py-3 font-bold">Estado de pagos</h2>
-          <table className="w-full min-w-[560px]">
-            <thead><tr className="border-b border-line"><th className="th">Alumno</th>{course.months.map((m) => <th key={m} className="th text-center" title={MONTH_NAMES[m - 1]}>{MONTH_SHORT[m - 1]}</th>)}</tr></thead>
-            <tbody>
-              {visible.map((r) => (
-                <tr key={r.student.id} className="border-b border-line/60">
-                  <th scope="row" className="td text-left font-medium">{r.student.firstName} {r.student.lastName.charAt(0)}.</th>
-                  {course.months.map((m) => (
-                    <td key={m} className="p-1 text-center"><span className={`inline-block w-full min-w-[34px] rounded-md py-1 text-xs font-semibold ${CELL[r.months[m].status]}`}>{MARK[r.months[m].status]}</span></td>
-                  ))}
-                </tr>
-              ))}
-              {!visible.length && <tr><td className="td text-muted" colSpan={course.months.length + 1}>Aún no hay alumnos.</td></tr>}
-            </tbody>
-          </table>
-          <p className="px-5 py-3 text-xs text-muted">✓ pagado · $ abonado · · pendiente · — no aplica. Por privacidad se muestra solo la inicial del apellido y no los montos.</p>
+      <section className="card space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Contabilidad pública · {course.year}</p>
+            <h1 className="text-2xl font-bold sm:text-3xl">{course.school} · {course.name}</h1>
+          </div>
+          <span className="rounded-full bg-slate-800 px-4 py-2 text-sm font-bold tracking-wider text-white">{course.code}</span>
         </div>
-      )}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[["Tesorero", owner?.name ?? "—"], ["Año", String(course.year)], ["Cuota mensual", clp(course.monthlyFee)], ["Alumnos", String(k.activeStudents)]].map(([a, b]) => (
+            <div key={a} className="rounded-xl border border-line bg-bg p-3"><p className="text-xs text-muted">{a}</p><p className="mt-0.5 font-bold">{b}</p></div>
+          ))}
+        </div>
+      </section>
+
+      <nav aria-label="Secciones" className="flex flex-wrap gap-2 text-sm font-semibold">
+        {[["#caja", "Caja"], ["#recaudacion", "Recaudación"], ["#graficos", "Gráficos"], ...(course.publicExpenses ? [["#movimientos", "Movimientos"]] : [])].map(([h, t]) => (
+          <a key={h} href={h} className="rounded-full border border-line bg-white px-4 py-1.5 hover:border-brand">{t}</a>
+        ))}
+      </nav>
+
+      <section id="caja" className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-3 rounded-2xl bg-slate-800 p-6 text-white">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wide text-slate-300">Disponible en caja</p>
+            <p className={`mt-1 text-4xl font-bold sm:text-5xl ${s.balance >= 0 ? "text-emerald-300" : "text-red-300"}`}>{clp(s.balance)}</p>
+          </div>
+          <p className="max-w-xs text-sm text-slate-300">Cuotas + extras cobrados, menos los gastos del curso.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Stat label="Cuotas recaudadas" value={clp(s.collected)} tone="good" />
+          <Stat label="Ingresos extra" value={clp(s.extras)} tone="good" />
+          <Stat label="Gastos" value={clp(s.expenses)} tone="bad" />
+          <Stat label="Alumnos" value={String(k.activeStudents)} />
+        </div>
+      </section>
+
+      <section id="recaudacion" className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-xl font-bold">Recaudación</h2>
+          <p className="text-sm text-muted">Qué se ha cobrado y qué falta, solo con pagos reales.</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="card">
+            <p className="font-semibold text-muted">Hasta {mName} {course.year}</p>
+            <p className="mt-2 text-4xl font-bold">{pct(k.toDate.pct)}</p>
+            <Progress value={k.toDate.pct} color={C.green} />
+            <p className="mt-2 text-sm text-muted">{clp(k.toDate.collected)} de {clp(k.toDate.expected)}</p>
+          </div>
+          <div className="card">
+            <p className="font-semibold text-muted">Faltante hasta {mName}</p>
+            <p className={`mt-2 text-4xl font-bold ${k.toDate.missing > 0 ? "text-red-700" : "text-emerald-700"}`}>{clp(k.toDate.missing)}</p>
+            <p className="mt-2 text-sm text-muted">{pct(100 - k.toDate.pct)} pendiente a la fecha</p>
+          </div>
+          <div className="card">
+            <p className="font-semibold text-muted">Año completo</p>
+            <p className="mt-2 text-4xl font-bold">{pct(k.year.pct)}</p>
+            <Progress value={k.year.pct} color={C.gold} />
+            <p className="mt-2 text-sm text-muted">{clp(k.year.collected)} de {clp(k.year.expected)}</p>
+          </div>
+          <div className="card">
+            <p className="font-semibold text-muted">Saldo de cuotas por recaudar</p>
+            <p className="mt-2 text-4xl font-bold">{clp(k.year.missing)}</p>
+            <p className="mt-2 text-sm text-muted">Compromisos anuales pendientes</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="graficos" className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-xl font-bold">Gráficos</h2>
+          <p className="text-sm text-muted">Pagos, evolución y balance de los meses del año.</p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="card">
+            <h3 className="font-bold">Cumplimiento hasta {mName} {course.year}</h3>
+            <p className="mb-2 text-sm text-muted">Pagos acumulados vs saldo</p>
+            <Donut label="Cumplimiento a la fecha" parts={[{ value: k.toDate.collected, color: C.green }, { value: k.toDate.missing, color: C.gold }]} />
+            <p className="mt-2 flex justify-center gap-4 text-xs text-muted">
+              <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm" style={{ background: C.green }} />Pagos realizados</span>
+              <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm" style={{ background: C.gold }} />Saldo pendiente</span>
+            </p>
+          </div>
+          <div className="card">
+            <h3 className="font-bold">Estado anual {course.year}</h3>
+            <p className="mb-2 text-sm text-muted">Montos pagados e incluye abonos</p>
+            <Donut hole={0} label="Estado anual" parts={[{ value: k.year.collected, color: C.green }, { value: k.year.missing, color: C.red }]} />
+            <p className="mt-2 flex justify-center gap-4 text-xs text-muted">
+              <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm" style={{ background: C.green }} />Monto pagado</span>
+              <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm" style={{ background: C.red }} />Monto pendiente</span>
+            </p>
+          </div>
+          <div className="card">
+            <h3 className="font-bold">Evolución mensual</h3>
+            <p className="mb-2 text-sm text-muted">Ingresos reales vs gastos</p>
+            <LineChart labels={labels} a={k.series.map((x) => x.income)} b={k.series.map((x) => x.expenses)} label="Ingresos y gastos por mes" />
+            <p className="mt-1 flex justify-center gap-4 text-xs text-muted">
+              <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm" style={{ background: C.green }} />Ingresos</span>
+              <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm" style={{ background: C.red }} />Gastos</span>
+            </p>
+          </div>
+          <div className="card">
+            <h3 className="font-bold">Balance histórico</h3>
+            <p className="mb-2 text-sm text-muted">Resultado mes a mes</p>
+            <BarChart labels={labels} values={k.series.map((x) => x.balance)} label="Balance por mes" />
+          </div>
+        </div>
+      </section>
 
       {course.publicExpenses && (
-        <div className="card !p-0 overflow-x-auto">
-          <h2 className="border-b border-line px-5 py-3 font-bold">Gastos del curso</h2>
-          {expenses.length === 0 ? <p className="p-5 text-sm text-muted">Todavía no hay gastos registrados.</p> : (
-            <table className="w-full min-w-[480px]">
-              <tbody>
-                {expenses.map((e) => (
-                  <tr key={e.id} className="border-b border-line/60">
-                    <td className="td whitespace-nowrap text-muted">{e.date}</td>
-                    <td className="td">{e.description}</td>
-                    <td className="td text-right font-semibold tabular-nums">{clp(e.amount)}</td>
-                    <td className="td text-right">{e.receiptFile && <a className="font-semibold text-brand" target="_blank" rel="noopener noreferrer" href={`/api/p/${course.code}/receipt/${e.receiptFile}`}>Boleta</a>}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
+        <section id="movimientos" className="space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xl font-bold">Movimientos</h2>
+            <p className="text-sm text-muted">Gastos con boleta e ingresos extra cobrados.</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="card !p-0">
+              <div className="border-b border-line px-5 py-3"><h3 className="font-bold">Gastos</h3><p className="text-sm text-muted">{expenses.length} {expenses.length === 1 ? "registrado" : "registrados"}</p></div>
+              {expenses.length === 0 ? <p className="p-5 text-sm text-muted">Todavía no hay gastos registrados.</p> : (
+                <ul className="max-h-96 divide-y divide-line overflow-y-auto">
+                  {expenses.map((e) => (
+                    <li key={e.id} className="flex items-start justify-between gap-3 px-5 py-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold">{e.description}</p>
+                        <p className="text-xs text-muted">{e.category} · {dmy(e.date)}{e.vendor ? ` · ${e.vendor}` : ""}
+                          {e.receiptFile && <> · <a className="font-semibold text-brand" target="_blank" rel="noopener noreferrer" href={`/api/p/${course.code}/receipt/${e.receiptFile}`}>Ver boleta</a></>}
+                        </p>
+                      </div>
+                      <p className="whitespace-nowrap font-bold text-red-700">-{clp(e.amount)}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="card !p-0">
+              <div className="border-b border-line px-5 py-3"><h3 className="font-bold">Ingresos extra</h3><p className="text-sm text-muted">{k.sharedExtras.length} {k.sharedExtras.length === 1 ? "del curso" : "del curso"}{k.individualExtras ? ` · ${k.individualExtras} individuales (incluidos en los totales)` : ""}</p></div>
+              {k.sharedExtras.length === 0 ? <p className="p-5 text-sm text-muted">Todavía no hay ingresos extra del curso.</p> : (
+                <ul className="max-h-96 divide-y divide-line overflow-y-auto">
+                  {k.sharedExtras.map((e) => (
+                    <li key={e.id} className="flex items-start justify-between gap-3 px-5 py-3">
+                      <div><p className="font-semibold">{e.description}</p><p className="text-xs text-muted">{dmy(e.date)}</p></div>
+                      <p className="whitespace-nowrap font-bold text-emerald-700">+{clp(e.amount)}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </section>
       )}
 
+      <p className="rounded-xl bg-bg p-4 text-center text-sm text-muted">
+        Por privacidad, aquí no se muestran nombres ni pagos de alumnos. Cada apoderado ve solo la información de su hijo/a con su enlace o código personal.
+      </p>
       <p className="text-center text-sm text-muted">
         ¿Eres el tesorero? <Link href="/login" className="font-semibold text-brand">Inicia sesión</Link>
       </p>

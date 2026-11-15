@@ -19,8 +19,8 @@ const FAQ: [string, [string, string][]][] = [
     ["¿Puedo registrar rifas u otros ingresos?", `Sí, en Ingresos extra. El plan Gratis admite hasta ${PLANS.freeExtraLimit}; el Pro no tiene tope.`],
   ]],
   ["Apoderados", [
-    ["¿Cómo ven los apoderados sus pagos?", "Cada alumno tiene un enlace de ficha que puedes enviar por WhatsApp. También pueden ingresar el código del curso en la página de inicio para ver el estado general."],
-    ["¿Qué ven con el código del curso?", "Totales del curso, el estado de pago por alumno (solo nombre y la inicial del apellido, sin montos) y los gastos con boleta. Tú decides en Configuración qué se muestra."],
+    ["¿Cómo ven los apoderados sus pagos?", "Cada alumno tiene un enlace de ficha que puedes enviar por WhatsApp. También pueden ingresar el código del curso en la página de inicio para ver el resumen del curso."],
+    ["¿Qué ven con el código del curso?", "Un resumen del curso: dinero disponible, cuotas recaudadas, porcentaje de avance, gráficos y, si tú lo permites, los gastos con boleta. Nunca ven a otros alumnos ni lo que ha pagado cada uno; eso solo lo ve el tesorero y la directiva."],
     ["¿El RUT es obligatorio?", "No. Solo el nombre y apellido."],
   ]],
   ["Reportes y seguridad", [

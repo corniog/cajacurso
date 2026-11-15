@@ -89,7 +89,7 @@ export default async function FichaPage({ params, searchParams }: PageProps<"/f/
       )}
 
       <p className="text-center text-sm text-muted">
-        <Link href={`/c/${course.code}`} className="font-semibold text-brand">Ver el estado general del curso</Link>
+        <Link href={`/c/${course.code}`} className="font-semibold text-brand">Ver el resumen general del curso</Link>
       </p>
     </main>
   );

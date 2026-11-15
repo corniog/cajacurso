@@ -220,7 +220,9 @@ try {
   await pp.getByRole("button", { name: "Entrar" }).click();
   await pp.waitForURL(/\/c\//);
   const ctxt = await pp.locator("body").innerText();
-  check("Código del curso: nombres abreviados y sin montos individuales", ctxt.includes("Ana P.") && !ctxt.includes("Pérez") && ctxt.includes("Útiles de arte"));
+  check("Código del curso: solo resumen, sin nombres de alumnos", !/Ana|Pérez|Soto|Luis|Díaz|María/.test(ctxt) && /Disponible en caja/i.test(ctxt) && /Recaudación/.test(ctxt) && ctxt.includes("Útiles de arte"));
+  check("Resumen: gráficos y porcentajes presentes", await pp.locator("svg[role=img]").count() >= 4 && /\d+,\d%/.test(ctxt));
+  await pp.screenshot({ path: `${SHOTS}/resumen-apoderados.png`, fullPage: true });
   const badFicha = await pp.goto(`${BASE}/f/ZZZZZ-ZZZZZ`);
   check("Código de alumno inexistente da 404", badFicha.status() === 404);
 

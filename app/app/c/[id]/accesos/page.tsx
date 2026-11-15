@@ -40,8 +40,8 @@ export default async function AccessPage({ params }: PageProps<"/app/c/[id]/acce
       </div>
 
       <div className="card">
-        <h3 className="font-bold">📋 Código del curso (estado general)</h3>
-        <p className="mb-3 text-sm text-muted">Resumen del curso, estado de pagos con nombres abreviados y gastos. Qué se muestra lo defines en Configuración.</p>
+        <h3 className="font-bold">📋 Código del curso (resumen para apoderados)</h3>
+        <p className="mb-3 text-sm text-muted">Resumen con totales, porcentajes y gráficos, sin nombres ni pagos de alumnos. Los gastos con boleta se muestran si lo activas en Configuración.</p>
         <div className="flex flex-wrap items-center gap-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={courseQr} alt={`QR del curso ${course.name}`} width={140} height={140} className="rounded-xl border border-line" />

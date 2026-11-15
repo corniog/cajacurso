@@ -23,14 +23,10 @@ export default async function ConfigPage({ params }: PageProps<"/app/c/[id]/conf
             startMonth: Math.min(...course.months), endMonth: Math.max(...course.months),
           }} />
           <fieldset className="space-y-2 rounded-xl border border-line p-3">
-            <legend className="px-1 text-sm font-semibold">Qué ven los apoderados con el código del curso</legend>
-            <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" name="publicStudents" defaultChecked={course.publicStudents} className="mt-1" />
-              <span>Lista de alumnos con su estado de pago (solo nombre y la inicial del apellido, sin montos)</span>
-            </label>
+            <legend className="px-1 text-sm font-semibold">Qué ven los apoderados en el resumen del curso</legend>
             <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" name="publicExpenses" defaultChecked={course.publicExpenses} className="mt-1" />
-              <span>Gastos del curso con sus boletas (transparencia)</span>
+              <span>Gastos e ingresos extra del curso con sus boletas (transparencia). Los totales y gráficos se muestran siempre; nunca se muestran otros alumnos.</span>
             </label>
           </fieldset>
           <p className="text-xs text-muted">
