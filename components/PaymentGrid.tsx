@@ -1,6 +1,9 @@
 "use client";
 import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { registerPayment, deletePayment } from "@/app/actions/course";
+import { sendStatementOne } from "@/app/actions/pro";
+import ActionNotice from "@/components/ActionNotice";
 import ActionForm from "@/components/ActionForm";
 import ActionButton from "@/components/ActionButton";
 import { MONTH_NAMES, MONTH_SHORT, PAYMENT_METHODS, clp, type MonthStatus } from "@/lib/finance";
@@ -8,6 +11,7 @@ import { MONTH_NAMES, MONTH_SHORT, PAYMENT_METHODS, clp, type MonthStatus } from
 export type GridStudent = {
   id: string; name: string; active: boolean;
   months: Record<number, { status: MonthStatus; paid: number }>;
+  wa?: string | null; hasEmail?: boolean;
 };
 export type GridPayment = { id: string; studentId: string; month: number; amount: number; paidAt: string; method: string; notes: string | null };
 
@@ -20,8 +24,8 @@ const COLORS: Record<MonthStatus, string> = {
 const LABEL: Record<MonthStatus, string> = { pagado: "Pagado", abonado: "Abonado", pendiente: "Pendiente", no_aplica: "No aplica" };
 
 export default function PaymentGrid({
-  courseId, fee, months, students, payments, canWrite,
-}: { courseId: string; fee: number; months: number[]; students: GridStudent[]; payments: GridPayment[]; canWrite: boolean }) {
+  courseId, fee, months, students, payments, canWrite, pro = false,
+}: { courseId: string; fee: number; months: number[]; students: GridStudent[]; payments: GridPayment[]; canWrite: boolean; pro?: boolean }) {
   const dlg = useRef<HTMLDialogElement>(null);
   const [sel, setSel] = useState<{ studentId: string; month: number } | null>(null);
   const [checked, setChecked] = useState<number[]>([]);
@@ -53,11 +57,12 @@ export default function PaymentGrid({
   return (
     <>
       <div className="card overflow-x-auto !p-0">
-        <table className="w-full min-w-[720px] border-collapse">
+        <table className="w-full min-w-[860px] border-collapse">
           <thead>
             <tr className="border-b border-line">
               <th className="th sticky left-0 z-10 bg-white">Alumno</th>
               {months.map((m) => <th key={m} className="th text-center" title={MONTH_NAMES[m - 1]}>{MONTH_SHORT[m - 1]}</th>)}
+              {canWrite && <th className="th text-left">Enviar al apoderado</th>}
             </tr>
           </thead>
           <tbody>
@@ -82,10 +87,24 @@ export default function PaymentGrid({
                     </td>
                   );
                 })}
+                {canWrite && <td className="td whitespace-nowrap">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {s.wa ? (
+                      <a className="btn-ghost !px-2.5 !py-1 text-xs" href={s.wa} target="_blank" rel="noopener noreferrer" title="Abrir WhatsApp con el mensaje listo">💬 WhatsApp</a>
+                    ) : (
+                      <span className="text-xs text-muted" title="Agrega el teléfono en Alumnos → Editar">💬 sin teléfono</span>
+                    )}
+                    {pro && s.hasEmail && (
+                      <ActionNotice label="✉️ Correo" className="btn-ghost !px-2.5 !py-1 text-xs" action={() => sendStatementOne(courseId, s.id)} />
+                    )}
+                    {pro && !s.hasEmail && <span className="text-xs text-muted" title="Agrega el correo en Alumnos → Editar">✉️ sin correo</span>}
+                    {!pro && <Link href={`/app/c/${courseId}/plan`} className="text-xs text-muted underline" title="Enviar el PDF por correo es del Plan Pro">✉️ Correo (Pro)</Link>}
+                  </div>
+                </td>}
               </tr>
             ))}
             {!students.length && (
-              <tr><td className="td text-muted" colSpan={months.length + 1}>Aún no hay alumnos. Agrégalos en la sección Alumnos.</td></tr>
+              <tr><td className="td text-muted" colSpan={months.length + (canWrite ? 2 : 1)}>Aún no hay alumnos. Agrégalos en la sección Alumnos.</td></tr>
             )}
           </tbody>
         </table>

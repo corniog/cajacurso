@@ -1,5 +1,8 @@
 import { requireCourse } from "@/lib/auth";
-import { loadCourseData } from "@/lib/course-data";
+import { loadCourseData, appUrl } from "@/lib/course-data";
+import { isPro } from "@/lib/plans";
+import { whatsappLink } from "@/lib/util";
+import { clp } from "@/lib/finance";
 import PaymentGrid from "@/components/PaymentGrid";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +12,8 @@ export const metadata = { title: "Pagos" };
 export default async function PaymentsPage({ params }: PageProps<"/app/c/[id]/pagos">) {
   const { id } = await params;
   const { course, canWrite } = await requireCourse(id);
+  const pro = isPro(course);
+  const base = appUrl();
   const { rows, payments } = await loadCourseData(course);
   return (
     <>
@@ -26,7 +31,14 @@ export default async function PaymentsPage({ params }: PageProps<"/app/c/[id]/pa
           name: `${r.student.lastName}, ${r.student.firstName}`,
           active: r.student.active,
           months: r.months,
+          wa: whatsappLink(
+            r.student.guardianPhone,
+            `Hola${r.student.guardianName ? " " + r.student.guardianName.split(" ")[0] : ""}, te comparto el estado de cuenta de ${r.student.firstName} del curso ${course.name}.` +
+              `${r.debt > 0 ? ` Hoy hay ${clp(r.debt)} pendiente.` : " Está al día, ¡gracias!"}\nFicha: ${base}/f/${r.student.token}\nPDF: ${base}/api/f/${r.student.token}/pdf`,
+          ),
+          hasEmail: !!r.student.guardianEmail,
         }))}
+        pro={pro}
         payments={payments.map((p) => ({
           id: p.id, studentId: p.studentId, month: p.month, amount: p.amount,
           paidAt: p.paidAt, method: p.method, notes: p.notes,
