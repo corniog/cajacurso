@@ -88,8 +88,9 @@ try {
   check("Pago completo marca el mes como pagado", await cell(page, "Pérez, Ana", "Marzo").getAttribute("aria-label").then((a) => a.includes("Pagado")));
 
   await cell(page, "Pérez, Ana", "Abril").click();
-  await page.locator("dialog label", { hasText: /^May$/ }).click();
   await page.fill("#pay-amount", "7000");
+  const prev = await page.locator("dialog [aria-live=polite]").innerText();
+  check("Vista previa: el pago se reparte solo entre los meses siguientes", /Abril.*pagado/s.test(prev) && /Mayo.*abono/s.test(prev), prev.replace(/\s+/g, " "));
   await page.getByRole("button", { name: "Registrar pago" }).click();
   await dialogClosed(page);
   const abr = await cell(page, "Pérez, Ana", "Abril").getAttribute("aria-label");

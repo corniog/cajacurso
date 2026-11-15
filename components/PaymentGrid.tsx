@@ -28,7 +28,7 @@ export default function PaymentGrid({
 }: { courseId: string; fee: number; months: number[]; students: GridStudent[]; payments: GridPayment[]; canWrite: boolean; pro?: boolean }) {
   const dlg = useRef<HTMLDialogElement>(null);
   const [sel, setSel] = useState<{ studentId: string; month: number } | null>(null);
-  const [checked, setChecked] = useState<number[]>([]);
+  const [start, setStart] = useState<number | null>(null);
   const [amount, setAmount] = useState("");
 
   const student = students.find((s) => s.id === sel?.studentId);
@@ -37,21 +37,41 @@ export default function PaymentGrid({
     [payments, sel],
   );
 
-  const remaining = (s: GridStudent, m: number) => Math.max(0, fee - (s.months[m]?.paid ?? 0));
-  const suggest = (s: GridStudent, ms: number[]) => String(ms.reduce((a, m) => a + remaining(s, m), 0) || fee);
+  const remaining = (s: GridStudent, m: number) => (s.months[m]?.status === "no_aplica" ? 0 : Math.max(0, fee - (s.months[m]?.paid ?? 0)));
+  const firstPending = (s: GridStudent, from = 0) => months.find((m) => m >= from && remaining(s, m) > 0) ?? null;
 
-  function open(s: GridStudent, m: number) {
+  /** Reparte el monto desde el mes de inicio, cubriendo primero lo que falta de cada mes (automático). */
+  const plan = useMemo(() => {
+    if (!student || start === null) return { parts: [] as { m: number; amount: number; full: boolean }[], max: 0 };
+    const list = months.filter((m) => m >= start && remaining(student, m) > 0);
+    const max = list.reduce((a, m) => a + remaining(student, m), 0);
+    let left = Math.max(0, Math.floor(Number(amount) || 0));
+    const parts: { m: number; amount: number; full: boolean }[] = [];
+    for (const m of list) {
+      if (left <= 0) break;
+      const rem = remaining(student, m);
+      const a = Math.min(rem, left);
+      parts.push({ m, amount: a, full: a >= rem });
+      left -= a;
+    }
+    return { parts, max };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [student, start, amount, months, fee]);
+
+  function openAt(s: GridStudent, m: number) {
     if (s.months[m].status === "no_aplica") return;
+    const st = remaining(s, m) > 0 ? m : firstPending(s, m);
     setSel({ studentId: s.id, month: m });
-    setChecked([m]);
-    setAmount(suggest(s, [m]));
+    setStart(st);
+    setAmount(st === null ? "" : String(remaining(s, st)));
     dlg.current?.showModal();
   }
-  function toggle(m: number) {
-    if (!student) return;
-    const next = checked.includes(m) ? checked.filter((x) => x !== m) : [...checked, m].sort((a, b) => a - b);
-    setChecked(next);
-    setAmount(suggest(student, next));
+  function openRow(s: GridStudent) {
+    const st = firstPending(s);
+    setSel({ studentId: s.id, month: st ?? months.find((m) => s.months[m].status !== "no_aplica") ?? months[0] });
+    setStart(st);
+    setAmount(st === null ? "" : String(remaining(s, st)));
+    dlg.current?.showModal();
   }
 
   return (
@@ -78,7 +98,7 @@ export default function PaymentGrid({
                       <button
                         type="button"
                         disabled={c.status === "no_aplica"}
-                        onClick={() => open(s, m)}
+                        onClick={() => openAt(s, m)}
                         aria-label={`${s.name}, ${MONTH_NAMES[m - 1]}: ${LABEL[c.status]}`}
                         className={`h-9 w-full min-w-[52px] rounded-lg text-xs font-semibold transition cursor-pointer ${COLORS[c.status]}`}
                       >
@@ -89,6 +109,9 @@ export default function PaymentGrid({
                 })}
                 {canWrite && <td className="td whitespace-nowrap">
                   <div className="flex flex-wrap items-center gap-2">
+                    {firstPending(s) !== null && (
+                      <button type="button" className="btn !px-2.5 !py-1 text-xs" onClick={() => openRow(s)} title="Registrar un pago o abono; se reparte solo entre los meses pendientes">Abono</button>
+                    )}
                     {s.wa ? (
                       <a className="btn-ghost !px-2.5 !py-1 text-xs" href={s.wa} target="_blank" rel="noopener noreferrer" title="Abrir WhatsApp con el mensaje listo">💬 WhatsApp</a>
                     ) : (
@@ -146,47 +169,55 @@ export default function PaymentGrid({
             )}
 
             {canWrite ? (
+              start === null ? (
+                <p className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900">Este alumno no tiene meses pendientes. ¡Está al día!</p>
+              ) : (
               <ActionForm action={registerPayment.bind(null, courseId)} submit="Registrar pago" onDone={() => dlg.current?.close()}>
                 <input type="hidden" name="studentId" value={student.id} />
-                <fieldset>
-                  <legend className="label">Meses que cubre este pago</legend>
-                  <div className="flex flex-wrap gap-1.5">
-                    {months.filter((m) => student.months[m].status !== "no_aplica").map((m) => (
-                      <label key={m} className={`cursor-pointer rounded-lg border px-2.5 py-1 text-xs font-semibold ${
-                        checked.includes(m) ? "border-brand bg-brand text-white" : "border-line bg-white"}`}>
-                        <input type="checkbox" name="months" value={m} checked={checked.includes(m)} onChange={() => toggle(m)} className="sr-only" />
-                        {MONTH_SHORT[m - 1]}
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
+                {(plan.parts.length ? plan.parts.map((x) => x.m) : [start]).map((m) => <input key={m} type="hidden" name="months" value={m} />)}
+                <p className="text-sm text-muted">
+                  Máximo {clp(plan.max)} (lo que falta desde {MONTH_NAMES[start - 1]}). Se completa el primer mes pendiente y el resto sigue al siguiente.
+                </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label" htmlFor="pay-amount">Monto total (CLP)</label>
-                    <input id="pay-amount" name="amount" type="number" min={1} step={1} required className="input"
+                    <label className="label" htmlFor="pay-amount">Monto (CLP) *</label>
+                    <input id="pay-amount" name="amount" type="number" min={1} max={plan.max} step={1} required className="input"
                       value={amount} onChange={(e) => setAmount(e.target.value)} />
                   </div>
                   <div>
-                    <label className="label" htmlFor="pay-date">Fecha</label>
+                    <label className="label" htmlFor="pay-date">Fecha *</label>
                     <input id="pay-date" name="paidAt" type="date" required className="input" defaultValue={new Date().toISOString().slice(0, 10)} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label" htmlFor="pay-method">Método</label>
+                    <label className="label" htmlFor="pay-method">Método de pago</label>
                     <select id="pay-method" name="method" className="input">
                       {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="label" htmlFor="pay-notes">Observación</label>
+                    <label className="label" htmlFor="pay-notes">Observaciones</label>
                     <input id="pay-notes" name="notes" className="input" maxLength={200} placeholder="Opcional" />
                   </div>
                 </div>
-                {checked.length > 1 && (
-                  <p className="text-xs text-muted">El monto se reparte en orden, cubriendo primero lo que falta de cada mes.</p>
-                )}
+                <div className="rounded-xl border border-line bg-bg p-3 text-sm" aria-live="polite">
+                  {plan.parts.length ? (
+                    <>
+                      <p className="mb-1 font-semibold">Se aplicará:</p>
+                      <ul className="space-y-0.5">
+                        {plan.parts.map((x) => (
+                          <li key={x.m}>
+                            {MONTH_NAMES[x.m - 1]}: <b>{clp(x.amount)}</b>{" "}
+                            <span className={x.full ? "text-emerald-700" : "text-amber-700"}>({x.full ? "pagado" : "abono"})</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : <p className="text-muted">Escribe un monto para ver cómo se aplica.</p>}
+                </div>
               </ActionForm>
+              )
             ) : (
               <p className="text-sm text-muted">Tu rol es de solo lectura.</p>
             )}
