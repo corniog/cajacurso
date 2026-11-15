@@ -71,5 +71,23 @@ export async function GET(req: Request) {
     await db.delete(schema.courses).where(sql`id = ${id}`);
     return "insertado y borrado";
   });
+
+  // Consultas en paralelo con distintas cantidades de conexiones
+  const par = async (name: string, max: number, n = 8, extra: Record<string, unknown> = {}) => {
+    const t = t0();
+    const c = postgres(raw, { ssl: "require", prepare: false, connect_timeout: 6, idle_timeout: 3, max, ...extra } as never);
+    try {
+      await withTimeout(Promise.all(Array.from({ length: n }, () => drizzle(c, { schema }).select({ id: schema.users.id }).from(schema.users).limit(1))), 8000);
+      out[name] = `ok ${t0() - t}ms`;
+    } catch (e) { out[name] = `ERROR ${t0() - t}ms ${clean(e)}`; }
+    finally { c.end({ timeout: 1 }).catch(() => {}); }
+  };
+  await par("P1_max1_x8", 1);
+  await par("P2_max2_x8", 2);
+  await par("P3_max3_x8", 3);
+  await par("P4_max8_x8", 8);
+  await par("P5_max1_x2", 1, 2);
+  await par("P6_max3_x3", 3, 3);
+
   return NextResponse.json({ vercel: !!process.env.VERCEL, region: process.env.VERCEL_REGION, host: u.hostname, out });
 }
