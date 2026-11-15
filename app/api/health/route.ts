@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import net from "node:net";
 import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { sql } from "drizzle-orm";
+import * as schema from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
@@ -34,23 +37,22 @@ export async function GET(req: Request) {
     } catch (e) { out[name] = `ERROR ${t0() - t}ms ${clean(e)}`; }
   };
 
-  const pg = async (name: string, port: string, ssl: unknown) => {
+  const variant = async (name: string, opts: Record<string, unknown>, f: (c: ReturnType<typeof postgres>) => Promise<unknown>) => {
     const t = t0();
-    const url = new URL(raw); url.port = port;
-    const c = postgres(url.toString(), { max: 1, prepare: false, connect_timeout: 6, idle_timeout: 5, ssl: ssl as never });
-    try {
-      const r = await withTimeout(c`select count(*)::int as tablas from information_schema.tables where table_schema='public'`, 7000);
-      out[name] = `ok ${t0() - t}ms tablas=${r[0].tablas}`;
-    } catch (e) { out[name] = `ERROR ${t0() - t}ms ${clean(e)}`; }
+    const c = postgres(raw, { ssl: "require", max: 1, prepare: false, connect_timeout: 6, idle_timeout: 5, ...opts } as never);
+    try { const r = await withTimeout(f(c), 7000); out[name] = `ok ${t0() - t}ms ${JSON.stringify(r).slice(0, 80)}`; }
+    catch (e) { out[name] = `ERROR ${t0() - t}ms ${clean(e)}`; }
     finally { c.end({ timeout: 1 }).catch(() => {}); }
   };
 
   await Promise.all([
     tcp("tcp_6543", 6543),
-    tcp("tcp_5432", 5432),
-    pg("transaccion_ssl_require", "6543", "require"),
-    pg("transaccion_ssl_sin_verificar", "6543", { rejectUnauthorized: false }),
-    pg("sesion_5432_ssl_require", "5432", "require"),
+    variant("1_plantilla", {}, (c) => c`select 1 as ok`),
+    variant("2_unsafe_simple", {}, (c) => c.unsafe("select 1 as ok")),
+    variant("3_unsafe_params_values", {}, (c) => c.unsafe("select $1::int as ok", [1], { prepare: false }).values()),
+    variant("4_drizzle_execute", {}, (c) => drizzle(c).execute(sql`select 1 as ok`)),
+    variant("5_drizzle_tabla_users", {}, (c) => drizzle(c, { schema }).select({ id: schema.users.id }).from(schema.users).limit(1)),
+    variant("6_config_de_la_app", { idle_timeout: 20, connect_timeout: 15 }, (c) => c`select count(*)::int as n from users`),
   ]);
   return NextResponse.json({ vercel: !!process.env.VERCEL, region: process.env.VERCEL_REGION, host: u.hostname, out });
 }
