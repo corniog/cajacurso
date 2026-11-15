@@ -88,6 +88,9 @@ export async function GET(req: Request) {
   await par("P4_max8_x8", 8);
   await par("P5_max1_x2", 1, 2);
   await par("P6_max3_x3", 3, 3);
+  await par("P8_max1_x8_sin_pipeline", 1, 8, { max_pipeline: 1 });
+  await par("P9_max3_x8_sin_pipeline", 3, 8, { max_pipeline: 1 });
+  await par("P10_max5_x30_sin_pipeline", 5, 30, { max_pipeline: 1 });
 
   return NextResponse.json({ vercel: !!process.env.VERCEL, region: process.env.VERCEL_REGION, host: u.hostname, out });
 }

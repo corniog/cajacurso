@@ -12,6 +12,9 @@ const opts = {
   // El "pooler" de Supabase (modo transacción) no admite sentencias preparadas
   prepare: false,
   connect_timeout: 15,
+  // El pooler en modo transacción se cuelga si se envían varias consultas seguidas por la misma conexión
+  // (pipeline). Con 1 cada conexión espera la respuesta antes de enviar la siguiente.
+  max_pipeline: 1,
 };
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
