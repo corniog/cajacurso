@@ -5,7 +5,7 @@ import { qrDataUrl } from "@/lib/qr";
 import { generateDirectiveCode, revokeDirectiveCode } from "@/app/actions/pro";
 import ActionButton from "@/components/ActionButton";
 import CopyButton from "@/components/CopyButton";
-import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +56,7 @@ export default async function AccessPage({ params }: PageProps<"/app/c/[id]/acce
       <div className="card">
         <h3 className="font-bold">🏫 Directivos: ver todo, sin modificar</h3>
         <p className="mb-3 text-sm text-muted">
-          Con este código o QR ven todos los alumnos, pagos, gastos (con boletas) e ingresos, y pueden descargar el Excel{isPro(course) ? " y el PDF" : " (el PDF se habilita con el Plan Pro)"}. No pueden editar nada.
+          Con este código o QR ven todos los alumnos, pagos, gastos (con boletas) e ingresos, y pueden descargar el Excel{hasFeature(course, "pdf") ? " y el PDF" : " (el PDF se habilita con el Plan Pro)"}. No pueden editar nada.
         </p>
         {dirUrl && dirQr ? (
           <div className="flex flex-wrap items-center gap-5">

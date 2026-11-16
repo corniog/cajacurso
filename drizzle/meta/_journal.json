@@ -29,6 +29,20 @@
       "when": 1794657659894,
       "tag": "0003_freezing_blob",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794829822763,
+      "tag": "0004_eventos_y_funciones",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794847311860,
+      "tag": "0005_libro_contable",
+      "breakpoints": true
     }
   ]
 }

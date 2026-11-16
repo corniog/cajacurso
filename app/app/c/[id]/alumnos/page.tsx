@@ -7,7 +7,7 @@ import ActionButton from "@/components/ActionButton";
 import CopyButton from "@/components/CopyButton";
 import { MONTH_NAMES, clp } from "@/lib/finance";
 import { whatsappLink } from "@/lib/util";
-import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 import { sendStatementOne, sendStatementsAll } from "@/app/actions/pro";
 import ActionNotice from "@/components/ActionNotice";
 import type { Student, Course } from "@/lib/db/schema";
@@ -51,7 +51,7 @@ export default async function StudentsPage({ params }: PageProps<"/app/c/[id]/al
   await ensureStudentCodes(id);
   const { rows } = await loadCourseData(course);
   const base = appUrl();
-  const pro = isPro(course);
+  const pro = hasFeature(course, "email");
 
   return (
     <>

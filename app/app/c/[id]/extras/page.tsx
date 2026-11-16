@@ -6,7 +6,7 @@ import ActionForm from "@/components/ActionForm";
 import ActionButton from "@/components/ActionButton";
 import { clp } from "@/lib/finance";
 import { todayISO } from "@/lib/util";
-import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 import { PLANS } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export default async function ExtrasPage({ params }: PageProps<"/app/c/[id]/extr
   const { id } = await params;
   const { course, canWrite } = await requireCourse(id);
   const { extras, students, summary } = await loadCourseData(course);
-  const pro = isPro(course);
+  const pro = hasFeature(course, "extras");
   const full = !pro && extras.length >= PLANS.freeExtraLimit;
   const names = new Map(students.map((s) => [s.id, `${s.firstName} ${s.lastName}`]));
 
@@ -29,7 +29,7 @@ export default async function ExtrasPage({ params }: PageProps<"/app/c/[id]/extr
           <p className="text-sm text-muted">Rifas, ventas de comida, aportes voluntarios y otros ingresos distintos de la cuota.</p>
         </div>
         <span className={`badge ${full ? "bg-red-100 text-red-800" : "bg-slate-100 text-slate-700"}`}>
-          {pro ? "Ilimitados (Pro)" : `${extras.length} de ${PLANS.freeExtraLimit} en plan Gratis`}
+          {pro ? "Ilimitados" : `${extras.length} de ${PLANS.freeExtraLimit} en plan Gratis`}
         </span>
       </div>
 

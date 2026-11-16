@@ -8,6 +8,8 @@ const ITEMS = [
   { href: "/pagos", label: "Pagos", icon: "💰" },
   { href: "/gastos", label: "Gastos", icon: "🧾" },
   { href: "/extras", label: "Ingresos extra", icon: "🎟️" },
+  { href: "/libro", label: "Libro contable", icon: "📒" },
+  { href: "/eventos", label: "Ventas para eventos", icon: "🛒" },
   { href: "/reportes", label: "Reportes", icon: "📑" },
   { href: "/accesos", label: "Accesos y QR", icon: "🔑" },
   { href: "/plan", label: "Plan e integraciones", icon: "⭐" },

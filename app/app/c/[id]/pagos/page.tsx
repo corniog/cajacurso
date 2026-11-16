@@ -1,6 +1,6 @@
 import { requireCourse } from "@/lib/auth";
 import { loadCourseData, appUrl } from "@/lib/course-data";
-import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 import { whatsappLink } from "@/lib/util";
 import { clp } from "@/lib/finance";
 import PaymentGrid from "@/components/PaymentGrid";
@@ -12,7 +12,7 @@ export const metadata = { title: "Pagos" };
 export default async function PaymentsPage({ params }: PageProps<"/app/c/[id]/pagos">) {
   const { id } = await params;
   const { course, canWrite } = await requireCourse(id);
-  const pro = isPro(course);
+  const pro = hasFeature(course, "email");
   const base = appUrl();
   const { rows, payments } = await loadCourseData(course);
   return (

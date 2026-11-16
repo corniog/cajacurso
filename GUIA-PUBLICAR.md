@@ -59,6 +59,30 @@ Opciones de pago que ve el tesorero en *Plan e integraciones*: **Mercado Pago** 
 
 ---
 
+## Activar el envío de correos (Gmail, gratis y sin dominio)
+Sirve para: estado de cuenta en PDF a apoderados, recordatorios, boletas de eventos y avisos de solicitudes. Con Gmail puedes enviar a cualquier persona (límite de unos 500 correos al día).
+
+1. **Crea o elige un Gmail para la plataforma** (recomendado uno nuevo, por ejemplo `tesoreria.cajacurso@gmail.com`; así los apoderados no ven tu correo personal).
+2. En ese Gmail entra a **myaccount.google.com → Seguridad** y activa la **Verificación en 2 pasos** (si no la tienes, Google no deja crear la clave del siguiente paso).
+3. Abre **myaccount.google.com/apppasswords**, escribe un nombre (por ejemplo `CajaCurso`) y pulsa **Crear**. Google te muestra una clave de **16 letras**: cópiala sin espacios. Es distinta de tu contraseña normal y se puede borrar cuando quieras.
+4. En **Vercel → tu proyecto → Settings → Environment Variables** agrega:
+
+| Variable | Valor |
+|---|---|
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `465` |
+| `SMTP_USER` | el Gmail completo (ej. `tesoreria.cajacurso@gmail.com`) |
+| `SMTP_PASS` | la clave de 16 letras del paso 3 |
+| `SMTP_FROM` | `CajaCurso <tesoreria.cajacurso@gmail.com>` |
+
+5. **Deployments → ⋯ → Redeploy** (sin Redeploy no toma las variables nuevas).
+6. Prueba: en **Alumnos**, deja a un alumno con **tu propio correo** como apoderado y pulsa **✉️ Correo**. Debe decir "Estado de cuenta enviado" y llegar con el PDF (revisa también *Spam* la primera vez).
+
+Si dice "No se pudo enviar": revisa que la clave tenga 16 letras sin espacios, que el usuario sea el Gmail completo y que la verificación en 2 pasos esté activa. En Vercel → *Logs* aparece el motivo exacto (`[mail] error`).
+Alternativa si algún día necesitas más volumen: Brevo (300 correos/día gratis) con `SMTP_HOST=smtp-relay.brevo.com`, puerto `587`.
+
+---
+
 ## Costos y límites (hoy: $0)
 | Servicio | Gratis incluye | Ojo |
 |---|---|---|
@@ -85,7 +109,7 @@ Avisos normales: Windows mostrará "editor desconocido" y Android pedirá permit
 
 ## Actualizar después
 - **Cambios de código:** se suben a GitHub y Vercel publica solo.
-- **Cambios en la base de datos:** Claude te entregará un archivo `.sql` nuevo para pegar en el SQL Editor de Supabase.
+- **Cambios en la base de datos:** Claude te entregará un archivo `.sql` de actualización (ej. `supabase-actualizacion-1.sql`) para pegar en Supabase → SQL Editor → Run **antes** de publicar el código nuevo.
 
 ## Si algo falla
 | Síntoma | Causa probable |

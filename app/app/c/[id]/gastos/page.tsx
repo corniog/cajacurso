@@ -6,7 +6,7 @@ import ReceiptInput from "@/components/ReceiptInput";
 import ActionButton from "@/components/ActionButton";
 import { EXPENSE_CATEGORIES, clp } from "@/lib/finance";
 import { todayISO } from "@/lib/util";
-import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +32,7 @@ export default async function ExpensesPage({ params }: PageProps<"/app/c/[id]/ga
               <label className="block"><span className="label">N° de boleta (opcional)</span><input name="docNumber" className="input" maxLength={40} /></label>
               <ReceiptInput />
             </div>
-            {isPro(course) && <p className="text-xs text-muted">Plan Pro: si conectaste Google Drive, la boleta también se guarda allí.</p>}
+            {hasFeature(course, "drive") && <p className="text-xs text-muted">Si conectaste Google Drive, la boleta también se guarda allí.</p>}
           </ActionForm>
         </div>
       )}

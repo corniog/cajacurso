@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import type { Course } from "@/lib/db/schema";
 import { decrypt, encrypt } from "@/lib/crypto";
-import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 
 const SCOPE = ["https://www.googleapis.com/auth/drive.file"]; // solo accede a archivos creados por la app
 
@@ -54,7 +54,7 @@ export async function uploadReceiptToDrive(
   course: Course, fileName: string, mime: string, data: Buffer, label: string,
 ): Promise<string | null> {
   try {
-    if (!isPro(course) || !driveConfigured()) return null;
+    if (!hasFeature(course, "drive") || !driveConfigured()) return null;
     const [i] = await db.select().from(schema.integrations).where(eq(schema.integrations.courseId, course.id)).limit(1);
     if (!i?.driveRefreshToken || !i.driveFolderId) return null;
     const client = oauth();

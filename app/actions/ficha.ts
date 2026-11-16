@@ -5,7 +5,7 @@ import { db, schema } from "@/lib/db";
 import { getStudentByToken } from "@/lib/public-data";
 import { decrypt } from "@/lib/crypto";
 import { mpPreference } from "@/lib/mp";
-import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 import { buildRows } from "@/lib/finance";
 import { appUrl } from "@/lib/course-data";
 import type { ActionState } from "@/app/actions/course";
@@ -18,7 +18,7 @@ export async function payOnline(token: string, _: ActionState, fd: FormData): Pr
     if (!found) return { error: "Ficha no encontrada" };
     const { student, course } = found;
     const [integ] = await db.select().from(schema.integrations).where(eq(schema.integrations.courseId, course.id)).limit(1);
-    if (!isPro(course) || !integ?.mpAccessToken) return { error: "El pago en línea no está disponible en este curso." };
+    if (!hasFeature(course, "mercadopago") || !integ?.mpAccessToken) return { error: "El pago en línea no está disponible en este curso." };
 
     const months = [...new Set(fd.getAll("months").map(Number))].filter((m) => course.months.includes(m)).sort((a, b) => a - b);
     if (!months.length) return { error: "Elige al menos un mes para pagar" };
