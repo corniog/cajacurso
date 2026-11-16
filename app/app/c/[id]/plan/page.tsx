@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { requireCourse } from "@/lib/auth";
 import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 import { BRAND, PLANS } from "@/lib/brand";
 import { clp } from "@/lib/finance";
 import { platformMpConfigured } from "@/lib/mp";
@@ -90,7 +91,7 @@ export default async function PlanPage({ params, searchParams }: PageProps<"/app
         <p className="text-xs text-muted">Un pago extiende la vigencia desde el vencimiento actual. El Pro se activa solo en este curso.</p>
       </div>
 
-      <div className={`grid gap-5 lg:grid-cols-2 ${pro ? "" : "opacity-60"}`}>
+      <div className="grid gap-5 lg:grid-cols-2">
         <div className="card space-y-3">
           <h3 className="font-bold">Mercado Pago en la ficha</h3>
           <p className="text-sm text-muted">Los apoderados pagan en línea y el pago queda registrado solo. El dinero llega a <b>tu</b> cuenta de Mercado Pago.</p>
@@ -99,11 +100,13 @@ export default async function PlanPage({ params, searchParams }: PageProps<"/app
               <span className="badge bg-emerald-100 text-emerald-900">Conectado</span>
               {isOwner && <ActionButton className="btn-danger" label="Desconectar" confirm="¿Desconectar Mercado Pago?" action={removeMpToken.bind(null, id)} />}
             </div>
-          ) : isOwner && pro ? (
+          ) : isOwner && hasFeature(course, "mercadopago") ? (
             <ActionForm action={saveMpToken.bind(null, id)} submit="Conectar">
               <label className="label" htmlFor="mp">Access Token de producción</label>
               <input id="mp" name="token" type="password" className="input" autoComplete="off" placeholder="APP_USR-…" />
-              <p className="text-xs text-muted">Lo encuentras en Mercado Pago → Tu negocio → Credenciales. Se guarda cifrado.</p>
+              <p className="text-xs text-muted">
+                En <b>mercadopago.cl/developers</b> → <b>Tus integraciones</b> → crea una aplicación (Checkout Pro) → <b>Credenciales</b> → elige <b>Producción</b> (si es la primera vez, pulsa “Activar ambiente de producción”) y copia el <b>Access Token</b>. Se guarda cifrado.
+              </p>
             </ActionForm>
           ) : <p className="text-sm text-muted">Disponible en Plan Pro.</p>}
         </div>
@@ -116,7 +119,7 @@ export default async function PlanPage({ params, searchParams }: PageProps<"/app
               <span className="badge bg-emerald-100 text-emerald-900">Conectado</span>
               {isOwner && <ActionButton className="btn-danger" label="Desconectar" confirm="¿Desconectar Google Drive?" action={disconnectDriveAction.bind(null, id)} />}
             </div>
-          ) : isOwner && pro ? (
+          ) : isOwner && hasFeature(course, "drive") ? (
             driveConfigured()
               ? <a className="btn" href={`/api/integrations/drive/start?course=${id}`}>Conectar Google Drive</a>
               : <p className="text-sm text-muted">Google Drive aún no está configurado en esta plataforma.</p>
@@ -127,7 +130,7 @@ export default async function PlanPage({ params, searchParams }: PageProps<"/app
           <h3 className="font-bold">Correos y recordatorios</h3>
           <p className="text-sm text-muted">Aviso al apoderado cuando registras un pago y recordatorio mensual de deuda.</p>
           {!mailConfigured() && <p className="text-xs text-amber-700">El envío de correos aún no está configurado en esta plataforma (SMTP).</p>}
-          {isOwner && pro ? (
+          {isOwner && hasFeature(course, "reminders") ? (
             <>
               <ActionForm action={saveReminders.bind(null, id)} submit="Guardar" resetOnSuccess={false}>
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="enabled" defaultChecked={integ?.remindersEnabled} /> Enviar recordatorio automático cada mes</label>
@@ -151,7 +154,7 @@ export default async function PlanPage({ params, searchParams }: PageProps<"/app
               ))}
             </ul>
           )}
-          {isOwner && pro && members.length === 0 ? (
+          {isOwner && hasFeature(course, "coTreasurer") && members.length === 0 ? (
             <ActionForm action={addMember.bind(null, id)} submit="Agregar co-tesorero">
               <input name="email" type="email" required className="input" placeholder="correo@ejemplo.cl" aria-label="Correo del co-tesorero" />
             </ActionForm>

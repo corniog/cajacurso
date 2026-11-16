@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireCourse } from "@/lib/auth";
 import { loadCourseData } from "@/lib/course-data";
-import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 import PrintButton from "@/components/PrintButton";
 import ReportView from "@/components/ReportView";
 
@@ -13,7 +13,7 @@ export default async function ReportsPage({ params }: PageProps<"/app/c/[id]/rep
   const { id } = await params;
   const { course } = await requireCourse(id);
   const { rows, summary } = await loadCourseData(course);
-  const pro = isPro(course);
+  const pro = hasFeature(course, "pdf");
 
   return (
     <>

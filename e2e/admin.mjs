@@ -68,7 +68,7 @@ try {
   const c1 = a.locator("li", { hasText: COURSE }).first();
   check("El buscador encuentra el curso", await c1.count() === 1);
   check("Se ve que el curso tiene Pro", (await c1.innerText()).includes("Pro hasta"));
-  await c1.locator("summary").click();
+  await c1.locator("summary").first().click();
   await c1.getByRole("button", { name: "Quitar Pro ahora" }).evaluate((b) => { window.confirm = () => true; });
   a.once("dialog", (d) => d.accept());
   await c1.getByRole("button", { name: "Quitar Pro ahora" }).click();
@@ -77,7 +77,7 @@ try {
   const c2 = a.locator("li", { hasText: COURSE }).first();
   check("El administrador puede quitar el Plan Pro", (await c2.innerText()).includes("Gratis"));
 
-  await c2.locator("summary").click();
+  await c2.locator("summary").first().click();
   const gf = c2.locator("form", { has: a.getByRole("button", { name: "Sumar días de Pro" }) });
   await gf.locator("[name=days]").selectOption("365");
   await gf.locator("[name=note]").fill("Cortesía prueba");
@@ -90,7 +90,7 @@ try {
   check("La vigencia manual quedó ~1 año adelante", !!until && yearOk, until?.[0]);
 
   const c3 = a.locator("li", { hasText: COURSE }).first();
-  await c3.locator("summary").click();
+  await c3.locator("summary").first().click();
   const df = c3.locator("form", { has: a.getByRole("button", { name: "Fijar fecha exacta" }) });
   await df.locator("[name=date]").fill("2031-03-15");
   await df.getByRole("button", { name: "Fijar fecha exacta" }).click();
@@ -102,6 +102,25 @@ try {
   const h = await a.locator("body").innerText();
   check("El historial registra transferencia y activaciones manuales", h.includes(COURSE) && /transferencia/i.test(h) && /manual/i.test(h) && h.includes("$4.990"));
   await a.screenshot({ path: "/tmp/cajacurso-shots/admin-historial.png", fullPage: true });
+
+  /* ---- Funciones por curso (el administrador activa o bloquea) ---- */
+  await t.goto(`${BASE}/app/c/${courseId}/eventos`);
+  check("Con Pro, Ventas para eventos está disponible", (await t.getByText("Nuevo evento").count()) === 1);
+  const fRow = async (state) => {
+    await a.goto(`${BASE}/admin/cursos?q=${encodeURIComponent(COURSE)}`);
+    const li = a.locator("li", { hasText: COURSE }).first();
+    await li.locator("summary", { hasText: "Funciones del curso" }).click();
+    await li.locator("select[name=events]").selectOption(state);
+    await li.getByRole("button", { name: "Guardar funciones" }).click();
+    await a.getByText(/guardad/i).first().waitFor().catch(() => {});
+    await a.waitForTimeout(800);
+  };
+  await fRow("off");
+  await t.goto(`${BASE}/app/c/${courseId}/eventos`);
+  check("El administrador puede bloquear una función aunque el curso tenga Pro", (await t.getByText("parte del Plan Pro").count()) >= 1);
+  await fRow("on");
+  await t.goto(`${BASE}/app/c/${courseId}/eventos`);
+  check("Y volver a activarla", (await t.getByText("Nuevo evento").count()) === 1);
 
   /* ---- Compresión de foto de boleta ---- */
   await t.goto(`${BASE}/app/c/${courseId}/gastos`);

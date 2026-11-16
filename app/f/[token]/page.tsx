@@ -7,7 +7,7 @@ import PayOnline from "@/components/PayOnline";
 import { db, schema } from "@/lib/db";
 import { getStudentByToken } from "@/lib/public-data";
 import { buildRows, clp, MONTH_NAMES } from "@/lib/finance";
-import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +30,7 @@ export default async function FichaPage({ params, searchParams }: PageProps<"/f/
   const [row] = buildRows(course, [student], payments);
   const [integ] = await db.select({ mp: schema.integrations.mpAccessToken }).from(schema.integrations)
     .where(eq(schema.integrations.courseId, course.id)).limit(1);
-  const canPay = isPro(course) && !!integ?.mp;
+  const canPay = hasFeature(course, "mercadopago") && !!integ?.mp;
   const options = course.months
     .filter((m) => row.months[m].status === "pendiente" || row.months[m].status === "abonado")
     .map((m) => ({ month: m, owed: course.monthlyFee - row.months[m].paid }));

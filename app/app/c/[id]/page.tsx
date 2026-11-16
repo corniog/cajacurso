@@ -2,6 +2,8 @@ import { requireCourse } from "@/lib/auth";
 import { loadCourseData, appUrl } from "@/lib/course-data";
 import { clp, MONTH_NAMES } from "@/lib/finance";
 import CopyButton from "@/components/CopyButton";
+import KpiDashboard from "@/components/KpiDashboard";
+import { buildKpis } from "@/lib/kpi";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +21,8 @@ function Kpi({ label, value, tone }: { label: string; value: string; tone?: "goo
 export default async function SummaryPage({ params }: PageProps<"/app/c/[id]">) {
   const { id } = await params;
   const { course } = await requireCourse(id);
-  const { students, rows, summary: s, expenses } = await loadCourseData(course);
+  const { students, rows, summary: s, expenses, extras } = await loadCourseData(course);
+  const k = buildKpis(course, rows, s, expenses, extras);
   const active = students.filter((x) => x.active).length;
   const link = `${appUrl()}/c/${course.code}`;
   const maxBar = Math.max(1, ...s.byMonth.map((m) => Math.max(m.collected, m.expected)));
@@ -44,6 +47,11 @@ export default async function SummaryPage({ params }: PageProps<"/app/c/[id]">) 
           <CopyButton text={link} label="Copiar enlace" />
         </div>
         <p className="break-all text-xs text-muted">{link}</p>
+      </div>
+
+      <div className="space-y-6">
+        <h2 className="text-xl font-bold">Indicadores del curso</h2>
+        <KpiDashboard course={course} k={k} s={s} />
       </div>
 
       <div className="card">

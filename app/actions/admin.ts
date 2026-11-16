@@ -6,6 +6,7 @@ import { db, schema } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 import { extendPro } from "@/lib/plans";
 import { PLANS } from "@/lib/brand";
+import { FEATURE_KEYS } from "@/lib/features";
 import type { ActionState } from "@/app/actions/course";
 
 const fail = (e: unknown): ActionState => ({ error: e instanceof Error ? e.message : "Ocurrió un error inesperado" });
@@ -114,5 +115,24 @@ export async function rejectRequest(subId: string, _: ActionState, fd: FormData)
     }).where(eq(schema.subscriptions.id, sub.id));
     refresh();
     return { ok: "Solicitud rechazada" };
+  } catch (e) { return fail(e); }
+}
+
+/** Activa o desactiva funciones sueltas de un curso, sin importar el plan. Valores: "plan" (según el plan), "on" o "off". */
+export async function setFeatures(courseId: string, _: ActionState, fd: FormData): Promise<ActionState> {
+  try {
+    await requireAdmin();
+    const c = await getCourse(courseId);
+    const features: Record<string, boolean> = {};
+    for (const k of FEATURE_KEYS) {
+      const v = String(fd.get(k) ?? "plan");
+      if (v === "on") features[k] = true;
+      else if (v === "off") features[k] = false;
+    }
+    await db.update(schema.courses).set({ features }).where(eq(schema.courses.id, c.id));
+    refresh();
+    revalidatePath(`/app/c/${c.id}`, "layout");
+    const on = Object.values(features).filter(Boolean).length, off = Object.values(features).filter((x) => !x).length;
+    return { ok: `Funciones guardadas (${on} activadas a mano, ${off} desactivadas)` };
   } catch (e) { return fail(e); }
 }

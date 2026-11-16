@@ -2,7 +2,8 @@ import { desc, eq, ilike, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import ActionForm from "@/components/ActionForm";
 import ActionNotice from "@/components/ActionNotice";
-import { grantPro, setProUntil, revokePro, resetTrial } from "@/app/actions/admin";
+import { grantPro, setProUntil, revokePro, resetTrial, setFeatures } from "@/app/actions/admin";
+import { FEATURES, FEATURE_KEYS, hasFeature } from "@/lib/features";
 import { isPro } from "@/lib/plans";
 import { clp } from "@/lib/finance";
 
@@ -68,6 +69,29 @@ export default async function CoursesAdminPage({ searchParams }: PageProps<"/adm
                     {pro && <ActionNotice className="btn-danger" label="Quitar Pro ahora" confirm={`¿Quitar el Plan Pro de ${c.name}? Vuelve a Gratis; no se borra ningún dato.`} action={revokePro.bind(null, c.id)} />}
                     {c.proTrialUsed && <ActionNotice label="Permitir otra prueba de 30 días" action={resetTrial.bind(null, c.id)} />}
                   </div>
+                </div>
+              </details>
+              <details>
+                <summary className="cursor-pointer text-sm font-semibold text-brand">
+                  Funciones del curso{Object.keys(c.features ?? {}).length ? ` · ${Object.keys(c.features).length} con ajuste manual` : ""}
+                </summary>
+                <div className="mt-3 rounded-xl bg-bg p-4">
+                  <p className="mb-3 text-xs text-muted">«Según el plan» = disponible solo con Plan Pro. «Activada» la habilita aunque el curso sea gratis; «Desactivada» la bloquea aunque tenga Pro.</p>
+                  <ActionForm action={setFeatures.bind(null, c.id)} submit="Guardar funciones" resetOnSuccess={false}>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {FEATURE_KEYS.map((k) => {
+                        const o = c.features?.[k];
+                        return (
+                          <label key={k} className="flex items-start justify-between gap-3 rounded-lg border border-line bg-white p-3 text-sm">
+                            <span><b>{FEATURES[k].label}</b><br /><span className="text-xs text-muted">{FEATURES[k].desc} · hoy: {hasFeature(c, k) ? "✅ disponible" : "🔒 bloqueada"}</span></span>
+                            <select name={k} defaultValue={o === true ? "on" : o === false ? "off" : "plan"} className="input !w-auto !py-1.5 text-xs">
+                              <option value="plan">Según el plan</option><option value="on">Activada</option><option value="off">Desactivada</option>
+                            </select>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </ActionForm>
                 </div>
               </details>
             </li>

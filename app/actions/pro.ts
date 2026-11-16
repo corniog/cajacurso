@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db, schema } from "@/lib/db";
 import { requireCourse } from "@/lib/auth";
 import { startTrial, isPro } from "@/lib/plans";
+import { hasFeature, FEATURES, type FeatureKey } from "@/lib/features";
 import { PLANS } from "@/lib/brand";
 import { encrypt } from "@/lib/crypto";
 import { mpPreference, platformMpConfigured, validateMpToken } from "@/lib/mp";
@@ -25,14 +26,15 @@ async function owner(courseId: string) {
   if (a.role !== "owner") throw new Error("Solo quien creó el curso puede hacer esto");
   return a;
 }
-async function writerPro(courseId: string) {
+const noFeature = (f: FeatureKey) => new Error(`"${FEATURES[f].label}" es parte del Plan Pro. Actívalo en Plan e integraciones o pídelo al administrador.`);
+async function writerPro(courseId: string, f: FeatureKey) {
   const a = await requireCourse(courseId, { write: true });
-  if (!isPro(a.course)) throw new Error("Esta función es parte del Plan Pro");
+  if (!hasFeature(a.course, f)) throw noFeature(f);
   return a;
 }
-async function ownerPro(courseId: string) {
+async function ownerPro(courseId: string, f: FeatureKey) {
   const a = await owner(courseId);
-  if (!isPro(a.course)) throw new Error("Esta función es parte del Plan Pro");
+  if (!hasFeature(a.course, f)) throw noFeature(f);
   return a;
 }
 
@@ -74,7 +76,7 @@ export async function subscribe(courseId: string, plan: "monthly" | "annual"): P
 
 export async function saveMpToken(courseId: string, _: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await ownerPro(courseId);
+    await ownerPro(courseId, "mercadopago");
     const token = String(fd.get("token") ?? "").trim();
     if (token.length < 20) return { error: "Pega tu Access Token de producción de Mercado Pago" };
     const v = await validateMpToken(token);
@@ -101,7 +103,7 @@ export async function disconnectDriveAction(courseId: string) {
 
 export async function saveReminders(courseId: string, _: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await ownerPro(courseId);
+    await ownerPro(courseId, "reminders");
     const day = z.coerce.number().int().min(1).max(28).safeParse(fd.get("reminderDay"));
     if (!day.success) return { error: "Elige un día entre 1 y 28" };
     const values = { remindersEnabled: fd.get("enabled") === "on", reminderDay: day.data, updatedAt: new Date() };
@@ -114,7 +116,7 @@ export async function saveReminders(courseId: string, _: ActionState, fd: FormDa
 
 export async function sendRemindersNow(courseId: string): Promise<ActionState> {
   try {
-    const { course } = await ownerPro(courseId);
+    const { course } = await ownerPro(courseId, "reminders");
     const r = await sendCourseReminders(course);
     if (!r.configured) return { error: "El envío de correos no está configurado en esta plataforma (SMTP)." };
     refresh(courseId);
@@ -124,7 +126,7 @@ export async function sendRemindersNow(courseId: string): Promise<ActionState> {
 
 export async function addMember(courseId: string, _: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    const { course } = await ownerPro(courseId);
+    const { course } = await ownerPro(courseId, "coTreasurer");
     const p = z.object({ email: z.string().trim().toLowerCase().email("Correo no válido") }).safeParse(Object.fromEntries(fd));
     if (!p.success) return { error: p.error.issues[0].message };
     const [u] = await db.select().from(schema.users).where(eq(schema.users.email, p.data.email)).limit(1);
@@ -149,7 +151,7 @@ export async function removeMember(courseId: string, userId: string) {
 
 export async function sendStatementOne(courseId: string, studentId: string): Promise<ActionState> {
   try {
-    const { course } = await writerPro(courseId);
+    const { course } = await writerPro(courseId, "email");
     if (!mailConfigured()) return { error: "El envío de correos no está configurado en esta plataforma (SMTP)." };
     const [st] = await db.select().from(schema.students)
       .where(and(eq(schema.students.id, studentId), eq(schema.students.courseId, courseId))).limit(1);
@@ -162,7 +164,7 @@ export async function sendStatementOne(courseId: string, studentId: string): Pro
 
 export async function sendStatementsAll(courseId: string): Promise<ActionState> {
   try {
-    const { course } = await writerPro(courseId);
+    const { course } = await writerPro(courseId, "email");
     const r = await sendCourseStatements(course);
     if (!r.configured) return { error: "El envío de correos no está configurado en esta plataforma (SMTP)." };
     return { ok: `Se enviaron ${r.sent} estados de cuenta${r.skipped ? ` (${r.skipped} apoderados sin correo o con error)` : ""}` };

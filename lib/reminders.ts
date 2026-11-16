@@ -5,7 +5,7 @@ import type { Course, Student } from "@/lib/db/schema";
 import { appUrl } from "@/lib/course-data";
 import { clp, MONTH_NAMES } from "@/lib/finance";
 import { esc, layout, sendMail, mailConfigured } from "@/lib/mail";
-import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 import { studentStatementPdf, statementFileName } from "@/lib/statement";
 
 type Kind = "reminder" | "statement" | "payment";
@@ -45,7 +45,7 @@ async function activeStudents(courseId: string) {
 
 /** Recordatorio a apoderados con deuda vencida (con PDF). Solo Plan Pro. */
 export async function sendCourseReminders(course: Course): Promise<{ sent: number; skipped: number; configured: boolean }> {
-  if (!isPro(course) || !mailConfigured()) return { sent: 0, skipped: 0, configured: mailConfigured() };
+  if (!hasFeature(course, "reminders") || !mailConfigured()) return { sent: 0, skipped: 0, configured: mailConfigured() };
   let sent = 0, skipped = 0;
   for (const s of await activeStudents(course.id)) {
     if (!s.active) continue;
@@ -60,7 +60,7 @@ export async function sendCourseReminders(course: Course): Promise<{ sent: numbe
 
 /** Estado de cuenta en PDF a todos los apoderados con correo, tengan o no deuda. Solo Plan Pro. */
 export async function sendCourseStatements(course: Course): Promise<{ sent: number; skipped: number; configured: boolean }> {
-  if (!isPro(course) || !mailConfigured()) return { sent: 0, skipped: 0, configured: mailConfigured() };
+  if (!hasFeature(course, "email") || !mailConfigured()) return { sent: 0, skipped: 0, configured: mailConfigured() };
   let sent = 0, skipped = 0;
   for (const s of await activeStudents(course.id)) {
     if (!s.active) continue;
@@ -73,7 +73,7 @@ export async function sendCourseStatements(course: Course): Promise<{ sent: numb
 /** Aviso de pago recibido al apoderado, con PDF actualizado (Plan Pro). No bloquea el flujo si falla. */
 export async function notifyPayment(course: Course, student: Student, amount: number, months: number[]) {
   try {
-    if (!isPro(course) || !student.guardianEmail || !mailConfigured()) return;
+    if (!hasFeature(course, "email") || !student.guardianEmail || !mailConfigured()) return;
     await sendStatementEmail(course, student, "payment", { amount, months });
   } catch (e) {
     console.error("[notifyPayment]", e instanceof Error ? e.message : e);

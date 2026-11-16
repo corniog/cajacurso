@@ -2,6 +2,7 @@ import { eq, count } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import type { Course } from "@/lib/db/schema";
 import { PLANS } from "@/lib/brand";
+import { hasFeature } from "@/lib/features";
 
 export const isPro = (c: Pick<Course, "proUntil">) => !!c.proUntil && c.proUntil.getTime() > Date.now();
 
@@ -11,7 +12,7 @@ export async function extraCount(courseId: string) {
 }
 
 export async function canAddExtra(course: Course) {
-  if (isPro(course)) return true;
+  if (hasFeature(course, "extras")) return true;
   return (await extraCount(course.id)) < PLANS.freeExtraLimit;
 }
 

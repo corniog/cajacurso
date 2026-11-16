@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { requireCourse } from "@/lib/auth";
 import { connectDrive } from "@/lib/drive";
-import { isPro } from "@/lib/plans";
+import { hasFeature } from "@/lib/features";
 import { appUrl } from "@/lib/course-data";
 
 export async function GET(req: Request) {
@@ -14,7 +14,7 @@ export async function GET(req: Request) {
 
   if (!code || !courseId || !state || state !== expected) return new NextResponse("Solicitud no válida", { status: 400 });
   const { course, role } = await requireCourse(courseId);
-  if (role !== "owner" || !isPro(course)) return new NextResponse("No autorizado", { status: 403 });
+  if (role !== "owner" || !hasFeature(course, "drive")) return new NextResponse("No autorizado", { status: 403 });
   try {
     await connectDrive(courseId, code, `${course.name} ${course.year}`);
   } catch (e) {
