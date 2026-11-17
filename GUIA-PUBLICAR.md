@@ -72,6 +72,15 @@ Para activar el botón (una sola vez, lo haces tú como administrador):
 
 ---
 
+## Panel de superusuario (administrador)
+En **🛡️ Administración** atiendes todo lo que pasa en la plataforma:
+- **Solicitudes:** lo que piden los tesoreros desde su panel (por ejemplo activar *Pago en línea (Mercado Pago)*) y los mensajes que te envían. Te llegan al panel y por correo (si hay SMTP). Al **aprobar**, la función se activa en ese curso al instante y el usuario recibe un correo; también puedes rechazar con un motivo.
+- **Usuarios:** busca por nombre o correo; **edita** nombre/correo, **suspende o reactiva** la cuenta (suspendida no puede entrar), **restablece la contraseña** (te muestra una temporal una sola vez) o **elimina** al usuario con todos sus cursos (pide escribir su correo). A los administradores no se les puede suspender ni eliminar.
+- **Cursos y planes:** días de Pro, fecha exacta, quitar Pro, **Funciones del curso** (activar o bloquear cada módulo/integración por curso) y **eliminar curso** (pide escribir el nombre).
+- Mercado Pago es la única función que el Pro **no** incluye: solo se activa cuando tú la apruebas (o la activas en *Funciones del curso*).
+
+---
+
 ## Activar el envío de correos (Gmail, gratis y sin dominio)
 Sirve para: estado de cuenta en PDF a apoderados, recordatorios, boletas de eventos y avisos de solicitudes. Con Gmail puedes enviar a cualquier persona (límite de unos 500 correos al día).
 
@@ -96,13 +105,13 @@ Alternativa si algún día necesitas más volumen: Brevo (300 correos/día grati
 
 ---
 
-## Costos y límites (hoy: $0)
+## Costos y límites (casi todo $0; Mercado Pago sí cobra comisión)
 | Servicio | Gratis incluye | Ojo |
 |---|---|---|
 | **GitHub** | Repos privados, 2.000 min/mes de compilación | — |
 | **Supabase** | 500 MB base de datos, 1 GB de archivos | Pausa el proyecto tras 1 semana sin uso. El recordatorio diario (cron) lo mantiene activo; si se pausa, pulsa **Restore** en el panel |
 | **Vercel (Hobby)** | Hosting y cron diario | El plan gratis es para uso **personal / no comercial**. Mientras pruebes o uses sin cobrar, bien. **Cuando empieces a cobrar suscripciones** debes pasar a Vercel Pro (~US$20/mes) o mover el sitio a otro hosting (se puede, el proyecto también corre con Docker). Verifica sus términos vigentes en vercel.com/legal/terms |
-| **Mercado Pago** | Sin mensualidad | Comisión por cada venta |
+| **Mercado Pago** | Sin mensualidad | **Cobra comisión por cada pago a quien recibe el dinero** (Checkout Chile: 3,19% al instante o 2,89% a 10 días, más impuestos; puede cambiar, revisa mercadopago.cl). Para los apoderados es mejor la transferencia (sin costo). Por eso está **apagado por defecto** y cada curso debe solicitarlo |
 | **Correos** | Brevo gratis: 300/día | Opcional (variables `SMTP_*`) |
 
 ---

@@ -5,6 +5,8 @@ import { isPro } from "@/lib/plans";
 import { hasFeature } from "@/lib/features";
 import { BRAND, PLANS } from "@/lib/brand";
 import { clp } from "@/lib/finance";
+import RequestFeature from "@/components/RequestFeature";
+import { sendMessageToAdmin } from "@/app/actions/support";
 import { platformMpConfigured, mpOAuthConfigured } from "@/lib/mp";
 import { driveConfigured } from "@/lib/drive";
 import { mailConfigured } from "@/lib/mail";
@@ -98,6 +100,11 @@ export default async function PlanPage({ params, searchParams }: PageProps<"/app
         <div className="card space-y-3">
           <h3 className="font-bold">Mercado Pago en la ficha</h3>
           <p className="text-sm text-muted">Los apoderados pagan en línea y el pago queda registrado solo. El dinero llega a <b>tu</b> cuenta de Mercado Pago.</p>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <p><b>Ojo: Mercado Pago cobra comisión a quien recibe el dinero (el tesorero).</b> Según su tarifa de Checkout en Chile hoy es 3,19% si recibes al instante o 2,89% si esperas 10 días, más impuestos (puede cambiar).</p>
+            <p className="mt-1">Si un apoderado paga $5.000, a tu cuenta llega menos. La app lo anota completo, así que tu saldo en Mercado Pago puede diferir de la caja por esas comisiones.</p>
+            <p className="mt-1"><b>Recomendación:</b> pide a los apoderados <b>transferir</b> (sin costo) y usa Mercado Pago solo si de verdad lo necesitas. Los aportes y colectas también aceptan transferencia.</p>
+          </div>
           {integ?.mpAccessToken ? (
             <div className="flex items-center justify-between gap-3">
               <span className="badge bg-emerald-100 text-emerald-900">Conectado{integ.mpRefreshToken ? " (se renueva solo)" : ""}</span>
@@ -124,7 +131,7 @@ export default async function PlanPage({ params, searchParams }: PageProps<"/app
                 </div>
               </details>
             </div>
-          ) : <p className="text-sm text-muted">Disponible en Plan Pro.</p>}
+          ) : <RequestFeature courseId={id} feature="mercadopago" isOwner={isOwner} />}
         </div>
 
         <div className="card space-y-3">
@@ -176,6 +183,13 @@ export default async function PlanPage({ params, searchParams }: PageProps<"/app
             </ActionForm>
           ) : members.length > 0 ? null : <p className="text-sm text-muted">Disponible en Plan Pro.</p>}
         </div>
+      </div>
+    <div className="card space-y-2">
+        <h3 className="font-bold">¿Necesitas algo del administrador?</h3>
+        <p className="text-sm text-muted">Pide una función, reporta un problema o haz una consulta. Te responderemos por correo.</p>
+        <ActionForm action={sendMessageToAdmin.bind(null, id)} submit="Enviar mensaje">
+          <textarea name="message" rows={3} maxLength={500} required className="input" placeholder="Escribe tu mensaje…" aria-label="Mensaje para el administrador" />
+        </ActionForm>
       </div>
     </>
   );

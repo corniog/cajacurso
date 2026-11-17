@@ -40,6 +40,7 @@ export async function login(_: FormState, fd: FormData): Promise<FormState> {
     await recordLoginFailure(key);
     return { error: "Correo o contraseña incorrectos" };
   }
+  if (u.disabled) return { error: "Tu cuenta está suspendida. Escribe al administrador de CajaCurso para reactivarla." };
   await clearLoginFailures(key);
   await createSession(u.id);
   redirect("/app");

@@ -2,8 +2,8 @@ import { desc, eq, ilike, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import ActionForm from "@/components/ActionForm";
 import ActionNotice from "@/components/ActionNotice";
-import { grantPro, setProUntil, revokePro, resetTrial, setFeatures } from "@/app/actions/admin";
-import { FEATURES, FEATURE_KEYS, hasFeature } from "@/lib/features";
+import { deleteCourseAdmin, grantPro, setProUntil, revokePro, resetTrial, setFeatures } from "@/app/actions/admin";
+import { FEATURES, FEATURE_KEYS, hasFeature, needsApproval } from "@/lib/features";
 import { isPro } from "@/lib/plans";
 import { clp } from "@/lib/finance";
 
@@ -85,12 +85,21 @@ export default async function CoursesAdminPage({ searchParams }: PageProps<"/adm
                           <label key={k} className="flex items-start justify-between gap-3 rounded-lg border border-line bg-white p-3 text-sm">
                             <span><b>{FEATURES[k].label}</b><br /><span className="text-xs text-muted">{FEATURES[k].desc} · hoy: {hasFeature(c, k) ? "✅ disponible" : "🔒 bloqueada"}</span></span>
                             <select name={k} defaultValue={o === true ? "on" : o === false ? "off" : "plan"} className="input !w-auto !py-1.5 text-xs">
-                              <option value="plan">Según el plan</option><option value="on">Activada</option><option value="off">Desactivada</option>
+                              <option value="plan">{needsApproval(k) ? "Apagada (sin aprobar)" : "Según el plan"}</option><option value="on">Activada</option><option value="off">Desactivada</option>
                             </select>
                           </label>
                         );
                       })}
                     </div>
+                  </ActionForm>
+                </div>
+              </details>
+              <details>
+                <summary className="cursor-pointer text-sm font-semibold text-red-700">Eliminar curso</summary>
+                <div className="mt-3 rounded-xl bg-bg p-4">
+                  <ActionForm action={deleteCourseAdmin.bind(null, c.id)} submit="Eliminar curso para siempre" submitClassName="btn-danger" resetOnSuccess={false}>
+                    <p className="text-sm text-red-800">Borra el curso, sus alumnos, pagos, gastos y boletas. Escribe el nombre del curso (<b>{c.name}</b>) para confirmar.</p>
+                    <input name="confirm" className="input" autoComplete="off" aria-label="Nombre del curso para confirmar" />
                   </ActionForm>
                 </div>
               </details>
