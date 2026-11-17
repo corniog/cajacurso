@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
-import { decrypt } from "@/lib/crypto";
-import { fetchPayment } from "@/lib/mp";
+import { fetchPayment, getCourseMpToken } from "@/lib/mp";
+import { confirmContribution } from "@/lib/contributions";
 import { extendPro } from "@/lib/plans";
 import { PLANS } from "@/lib/brand";
 import { allocateAcrossMonths } from "@/lib/finance";
@@ -61,10 +61,15 @@ async function handlePlatform(paymentId: string) {
 }
 
 async function handleGuardian(courseId: string, paymentId: string) {
-  const [integ] = await db.select().from(schema.integrations).where(eq(schema.integrations.courseId, courseId)).limit(1);
+  const mpToken = await getCourseMpToken(courseId);
   const [course] = await db.select().from(schema.courses).where(eq(schema.courses.id, courseId)).limit(1);
-  if (!integ?.mpAccessToken || !course) return;
-  const p = await fetchPayment(decrypt(integ.mpAccessToken), paymentId);
+  if (!mpToken || !course) return;
+  const p = await fetchPayment(mpToken, paymentId);
+  if (p && p.status === "approved" && p.externalReference?.startsWith("c:")) {
+    const [row] = await db.select().from(schema.contributionPayments).where(and(eq(schema.contributionPayments.id, p.externalReference.slice(2)), eq(schema.contributionPayments.courseId, courseId))).limit(1);
+    if (row && Math.round(p.amount) >= row.amount) await confirmContribution(courseId, row.id, { externalId: p.id });
+    return;
+  }
   if (!p || p.status !== "approved" || !p.externalReference?.startsWith("g:")) return;
   const [, studentId, monthsRaw] = p.externalReference.split(":");
   const months = [...new Set(monthsRaw.split(",").map(Number))].filter((m) => course.months.includes(m)).sort((a, b) => a - b);

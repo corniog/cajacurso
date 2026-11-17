@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import PayOnline from "@/components/PayOnline";
+import ContributionBox from "@/components/ContributionBox";
 import { db, schema } from "@/lib/db";
 import { getStudentByToken } from "@/lib/public-data";
 import { buildRows, clp, MONTH_NAMES } from "@/lib/finance";
@@ -31,6 +32,11 @@ export default async function FichaPage({ params, searchParams }: PageProps<"/f/
   const [integ] = await db.select({ mp: schema.integrations.mpAccessToken }).from(schema.integrations)
     .where(eq(schema.integrations.courseId, course.id)).limit(1);
   const canPay = hasFeature(course, "mercadopago") && !!integ?.mp;
+  const aportesOn = hasFeature(course, "contributions");
+  const [contribs, myAportes] = aportesOn ? await Promise.all([
+    db.select().from(schema.contributions).where(and(eq(schema.contributions.courseId, course.id), eq(schema.contributions.active, true))).orderBy(asc(schema.contributions.createdAt)),
+    db.select().from(schema.contributionPayments).where(eq(schema.contributionPayments.studentId, student.id)).orderBy(desc(schema.contributionPayments.createdAt)),
+  ]) : [[], []];
   const options = course.months
     .filter((m) => row.months[m].status === "pendiente" || row.months[m].status === "abonado")
     .map((m) => ({ month: m, owed: course.monthlyFee - row.months[m].paid }));
@@ -40,6 +46,7 @@ export default async function FichaPage({ params, searchParams }: PageProps<"/f/
     <main className="mx-auto w-full max-w-xl flex-1 space-y-4 px-4 py-8">
       <Logo />
       {sp.pago === "ok" && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">¡Gracias! Si tu pago fue aprobado, se verá reflejado aquí en unos instantes.</p>}
+      {sp.aporte === "ok" && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">¡Gracias por tu aporte! Aparecerá como confirmado en unos instantes.</p>}
       {sp.pago === "error" && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">El pago no se completó. Puedes intentarlo nuevamente.</p>}
 
       <div className="card">
@@ -73,6 +80,26 @@ export default async function FichaPage({ params, searchParams }: PageProps<"/f/
       </div>
 
       {canPay && <PayOnline token={token} options={options} />}
+
+      {aportesOn && (
+        <ContributionBox token={token} canPayOnline={canPay} transferInfo={course.transferInfo}
+          options={contribs.map((c) => ({ id: c.id, title: c.title, amount: c.amount, description: c.description, dueDate: c.dueDate }))} />
+      )}
+      {myAportes.length > 0 && (
+        <div className="card !p-0">
+          <h2 className="border-b border-line px-5 py-3 font-bold">Tus aportes</h2>
+          <ul className="divide-y divide-line text-sm">
+            {myAportes.map((a) => (
+              <li key={a.id} className="flex items-center justify-between gap-3 px-5 py-2.5">
+                <span>{a.concept}<br /><span className="text-xs text-muted">{a.createdAt.toLocaleDateString("es-CL", { timeZone: "America/Santiago" })} · {a.method === "mercadopago" ? "Mercado Pago" : "transferencia"}</span></span>
+                <span className="text-right"><b>{clp(a.amount)}</b><br />
+                  <span className={`badge ${a.status === "confirmed" ? "bg-emerald-100 text-emerald-900" : a.status === "rejected" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-900"}`}>
+                    {a.status === "confirmed" ? "Confirmado" : a.status === "rejected" ? "No confirmado" : "Esperando confirmación"}</span></span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {history.length > 0 && (
         <div className="card !p-0">

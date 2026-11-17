@@ -81,7 +81,7 @@ export async function saveMpToken(courseId: string, _: ActionState, fd: FormData
     if (token.length < 20) return { error: "Pega tu Access Token de producción de Mercado Pago" };
     const v = await validateMpToken(token);
     if (!v.ok) return { error: "Mercado Pago no reconoció ese token. Revisa que sea el Access Token de producción." };
-    const values = { mpAccessToken: encrypt(token), updatedAt: new Date() };
+    const values = { mpAccessToken: encrypt(token), mpRefreshToken: null, mpExpiresAt: null, mpUserId: null, updatedAt: new Date() };
     await db.insert(schema.integrations).values({ courseId, ...values })
       .onConflictDoUpdate({ target: schema.integrations.courseId, set: values });
     refresh(courseId);
@@ -91,7 +91,7 @@ export async function saveMpToken(courseId: string, _: ActionState, fd: FormData
 
 export async function removeMpToken(courseId: string) {
   await owner(courseId);
-  await db.update(schema.integrations).set({ mpAccessToken: null, updatedAt: new Date() }).where(eq(schema.integrations.courseId, courseId));
+  await db.update(schema.integrations).set({ mpAccessToken: null, mpRefreshToken: null, mpExpiresAt: null, mpUserId: null, updatedAt: new Date() }).where(eq(schema.integrations.courseId, courseId));
   refresh(courseId);
 }
 

@@ -5,7 +5,7 @@ import { isPro } from "@/lib/plans";
 import { hasFeature } from "@/lib/features";
 import { BRAND, PLANS } from "@/lib/brand";
 import { clp } from "@/lib/finance";
-import { platformMpConfigured } from "@/lib/mp";
+import { platformMpConfigured, mpOAuthConfigured } from "@/lib/mp";
 import { driveConfigured } from "@/lib/drive";
 import { mailConfigured } from "@/lib/mail";
 import ActionForm from "@/components/ActionForm";
@@ -37,6 +37,9 @@ export default async function PlanPage({ params, searchParams }: PageProps<"/app
       {sp.pago === "error" && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">El pago no se completó. Puedes intentarlo de nuevo.</p>}
       {sp.drive === "ok" && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Google Drive conectado.</p>}
       {sp.drive === "error" && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">No se pudo conectar Google Drive. Inténtalo otra vez.</p>}
+      {sp.mp === "ok" && <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Mercado Pago conectado. Los apoderados ya pueden pagar desde su ficha.</p>}
+      {sp.mp === "cancelado" && <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">Cancelaste la conexión con Mercado Pago. Puedes intentarlo de nuevo cuando quieras.</p>}
+      {sp.mp === "error" && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">No se pudo conectar Mercado Pago. Inténtalo otra vez o pega el Access Token.</p>}
 
       <div className="card space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -97,17 +100,30 @@ export default async function PlanPage({ params, searchParams }: PageProps<"/app
           <p className="text-sm text-muted">Los apoderados pagan en línea y el pago queda registrado solo. El dinero llega a <b>tu</b> cuenta de Mercado Pago.</p>
           {integ?.mpAccessToken ? (
             <div className="flex items-center justify-between gap-3">
-              <span className="badge bg-emerald-100 text-emerald-900">Conectado</span>
+              <span className="badge bg-emerald-100 text-emerald-900">Conectado{integ.mpRefreshToken ? " (se renueva solo)" : ""}</span>
               {isOwner && <ActionButton className="btn-danger" label="Desconectar" confirm="¿Desconectar Mercado Pago?" action={removeMpToken.bind(null, id)} />}
             </div>
           ) : isOwner && hasFeature(course, "mercadopago") ? (
-            <ActionForm action={saveMpToken.bind(null, id)} submit="Conectar">
-              <label className="label" htmlFor="mp">Access Token de producción</label>
-              <input id="mp" name="token" type="password" className="input" autoComplete="off" placeholder="APP_USR-…" />
-              <p className="text-xs text-muted">
-                En <b>mercadopago.cl/developers</b> → <b>Tus integraciones</b> → crea una aplicación (Checkout Pro) → <b>Credenciales</b> → elige <b>Producción</b> (si es la primera vez, pulsa “Activar ambiente de producción”) y copia el <b>Access Token</b>. Se guarda cifrado.
-              </p>
-            </ActionForm>
+            <div className="space-y-4">
+              {mpOAuthConfigured() && (
+                <div className="space-y-2">
+                  <a className="btn inline-block" href={`/api/integrations/mp/start?course=${id}`}>Conectar con Mercado Pago</a>
+                  <p className="text-xs text-muted">Te llevamos a Mercado Pago para que inicies sesión y autorices. No tienes que copiar claves.</p>
+                </div>
+              )}
+              <details open={!mpOAuthConfigured()}>
+                <summary className="cursor-pointer text-sm font-semibold text-brand">{mpOAuthConfigured() ? "Conectar pegando el Access Token (avanzado)" : "Conectar pegando el Access Token"}</summary>
+                <div className="mt-3">
+                  <ActionForm action={saveMpToken.bind(null, id)} submit="Conectar">
+                    <label className="label" htmlFor="mp">Access Token de producción</label>
+                    <input id="mp" name="token" type="password" className="input" autoComplete="off" placeholder="APP_USR-…" />
+                    <p className="text-xs text-muted">
+                      En <b>mercadopago.cl/developers</b> → <b>Tus integraciones</b> → crea una aplicación (Checkout Pro) → <b>Credenciales</b> → elige <b>Producción</b> (si es la primera vez, pulsa “Activar ambiente de producción”) y copia el <b>Access Token</b>. Se guarda cifrado.
+                    </p>
+                  </ActionForm>
+                </div>
+              </details>
+            </div>
           ) : <p className="text-sm text-muted">Disponible en Plan Pro.</p>}
         </div>
 

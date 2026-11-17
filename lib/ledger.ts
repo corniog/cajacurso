@@ -30,7 +30,7 @@ export const fmtDate = dmy;
  */
 export function buildLedger(
   course: Course, students: Student[], payments: Payment[], extras: ExtraIncome[], expenses: Expense[],
-  eventExtraIds: Set<string> = new Set(),
+  lockedExtras: Map<string, string> = new Map(),
 ) {
   const sName = new Map(students.map((s) => [s.id, `${s.lastName}, ${s.firstName}`]));
   const raw: Omit<LedgerEntry, "n" | "balance">[] = [];
@@ -50,7 +50,7 @@ export function buildLedger(
       key: `extra:${e.id}`, date: e.date, type: "income", source: "Ingreso extra",
       concept: e.description, detail: e.studentIds.length ? `${e.studentIds.length} alumno(s)` : "Curso completo",
       income: e.amount, expense: 0, entity: "extra", entityId: e.id,
-      locked: eventExtraIds.has(e.id) ? "Viene de un evento cerrado: reábrelo en Ventas para eventos para corregirlo" : null,
+      locked: lockedExtras.get(e.id) ?? null,
       createdAt: e.createdAt.getTime(),
     });
   }
