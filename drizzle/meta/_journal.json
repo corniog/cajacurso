@@ -57,6 +57,13 @@
       "when": 1794906639456,
       "tag": "0007_aportes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794911003883,
+      "tag": "0008_superusuario",
+      "breakpoints": true
     }
   ]
 }

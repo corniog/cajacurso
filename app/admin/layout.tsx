@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Administración", robots: { index: false, follow: false } };
 
-const NAV = [["/admin", "Resumen"], ["/admin/solicitudes", "Solicitudes"], ["/admin/cursos", "Cursos y planes"], ["/admin/historial", "Historial de pagos"]];
+const NAV = [["/admin", "Resumen"], ["/admin/solicitudes", "Solicitudes"], ["/admin/usuarios", "Usuarios"], ["/admin/cursos", "Cursos y planes"], ["/admin/historial", "Historial de pagos"]];
 
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   const user = await requireAdmin();

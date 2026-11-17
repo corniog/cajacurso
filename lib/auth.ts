@@ -39,7 +39,7 @@ export async function getUser(): Promise<User | null> {
   try {
     const { payload } = await jwtVerify(token, secretKey());
     const [u] = await db.select().from(schema.users).where(eq(schema.users.id, String(payload.uid))).limit(1);
-    return u ?? null;
+    return u && !u.disabled ? u : null;
   } catch {
     return null;
   }

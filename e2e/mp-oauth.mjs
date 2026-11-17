@@ -1,4 +1,5 @@
 import { chromium } from "playwright-core";
+import { execFileSync } from "node:child_process";
 const BASE = "http://localhost:3000";
 const b = await chromium.launch({ executablePath: "/usr/bin/google-chrome", args: ["--no-sandbox"] });
 const c = await b.newContext(); const p = await c.newPage();
@@ -12,6 +13,7 @@ const id = p.url().split("/c/")[1];
 await p.goto(`${BASE}/app/c/${id}/plan`);
 ck("Sin Pro no aparece el botón", (await p.getByText("Conectar con Mercado Pago").count()) === 0);
 await p.getByRole("button", { name: /Probar Pro/ }).click(); await p.getByRole("button", { name: /Probar Pro/ }).waitFor({ state: "detached" });
+execFileSync("psql", ["-h", "localhost", "-p", "5433", "-U", "postgres", "-d", "cajacurso", "-c", `update courses set features = '{"mercadopago": true}' where id = '${id}'`]);
 for (let i = 0; i < 10; i++) { await p.goto(`${BASE}/app/c/${id}/plan`); if (await p.getByRole("link", { name: "Conectar con Mercado Pago" }).count()) break; await p.waitForTimeout(700); }
 ck("Con Pro aparece el botón Conectar con Mercado Pago", (await p.getByRole("link", { name: "Conectar con Mercado Pago" }).count()) === 1);
 let target = "";

@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   passwordHash: text("password_hash").notNull(),
+  disabled: boolean("disabled").notNull().default(false), // cuenta suspendida por el administrador
   createdAt: createdAt(),
 });
 
@@ -231,6 +232,20 @@ export const contributionPayments = pgTable("contribution_payments", {
   createdAt: createdAt(),
 }, (t) => [index("contribpay_course_idx").on(t.courseId), index("contribpay_student_idx").on(t.studentId)]);
 
+/** Solicitudes que los usuarios envían al administrador/desarrollador desde la aplicación. */
+export const supportRequests = pgTable("support_requests", {
+  id: id(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  courseId: uuid("course_id").references(() => courses.id, { onDelete: "cascade" }),
+  kind: text("kind", { enum: ["feature", "message"] }).notNull(),
+  featureKey: text("feature_key"),
+  message: text("message"),
+  status: text("status", { enum: ["pending", "approved", "rejected"] }).notNull().default("pending"),
+  adminNote: text("admin_note"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  createdAt: createdAt(),
+}, (t) => [index("support_status_idx").on(t.status), index("support_user_idx").on(t.userId)]);
+
 /** Bitácora del libro contable: cada edición o eliminación de un movimiento queda registrada (auditoría). */
 export const ledgerAudit = pgTable("ledger_audit", {
   id: id(),
@@ -260,3 +275,4 @@ export type EventSettings = typeof eventSettings.$inferSelect;
 export type LedgerAudit = typeof ledgerAudit.$inferSelect;
 export type Contribution = typeof contributions.$inferSelect;
 export type ContributionPayment = typeof contributionPayments.$inferSelect;
+export type SupportRequest = typeof supportRequests.$inferSelect;
