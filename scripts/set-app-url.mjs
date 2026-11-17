@@ -1,8 +1,9 @@
 // Apunta las apps (Windows y Android) a la URL pública de tu plataforma.
 // Uso: node scripts/set-app-url.mjs https://tudominio.cl
 import fs from "node:fs";
-const raw = process.argv[2];
-if (!raw || !/^https?:\/\//.test(raw)) { console.error("Uso: node scripts/set-app-url.mjs https://tudominio.cl"); process.exit(1); }
+let raw = (process.argv[2] || "").trim();
+if (raw && !/^https?:\/\//.test(raw)) raw = `https://${raw}`; // acepta "midominio.vercel.app" sin https://
+if (!raw) { console.error("Uso: node scripts/set-app-url.mjs https://tudominio.cl"); process.exit(1); }
 const url = raw.replace(/\/$/, "");
 const https = url.startsWith("https://");
 fs.writeFileSync("desktop/config.json", JSON.stringify({ appUrl: url }, null, 2) + "\n");
