@@ -231,6 +231,11 @@ CREATE TABLE "ledger_audit" (
 ALTER TABLE "ledger_audit" ADD CONSTRAINT "ledger_audit_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
 CREATE INDEX "ledger_audit_course_idx" ON "ledger_audit" USING btree ("course_id");
 
+-- 0006_mp_oauth
+ALTER TABLE "integrations" ADD COLUMN "mp_refresh_token" text;
+ALTER TABLE "integrations" ADD COLUMN "mp_expires_at" timestamp with time zone;
+ALTER TABLE "integrations" ADD COLUMN "mp_user_id" text;
+
 -- Seguridad: el acceso a las tablas es solo desde la aplicación (rol postgres, que ignora RLS).
 -- Al activar RLS sin políticas, nadie puede leerlas por la API pública de Supabase.
 ALTER TABLE "course_members" ENABLE ROW LEVEL SECURITY;

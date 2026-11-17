@@ -118,6 +118,9 @@ export const subscriptions = pgTable("subscriptions", {
 export const integrations = pgTable("integrations", {
   courseId: uuid("course_id").primaryKey().references(() => courses.id, { onDelete: "cascade" }),
   mpAccessToken: text("mp_access_token"),
+  mpRefreshToken: text("mp_refresh_token"), // solo si se conectó con el botón (OAuth)
+  mpExpiresAt: timestamp("mp_expires_at", { withTimezone: true }),
+  mpUserId: text("mp_user_id"),
   driveRefreshToken: text("drive_refresh_token"),
   driveFolderId: text("drive_folder_id"),
   remindersEnabled: boolean("reminders_enabled").notNull().default(false),

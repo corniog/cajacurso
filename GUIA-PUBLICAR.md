@@ -59,6 +59,19 @@ Opciones de pago que ve el tesorero en *Plan e integraciones*: **Mercado Pago** 
 
 ---
 
+## Botón "Conectar con Mercado Pago" (para que cada tesorero cobre a sus apoderados)
+Mercado Pago se usa en **dos cosas distintas**:
+1. **Cobrar el Plan Pro a los tesoreros** → el dinero llega a **tu** cuenta (variable `MP_PLATFORM_ACCESS_TOKEN`). Es opcional: también puedes cobrar por transferencia y activar tú desde `/admin`.
+2. **Que los apoderados paguen la cuota desde su ficha** → el dinero llega a la cuenta de Mercado Pago **del tesorero** de cada curso (función Pro). Con el botón, el tesorero solo inicia sesión en Mercado Pago y autoriza; no copia claves.
+
+Para activar el botón (una sola vez, lo haces tú como administrador):
+1. En **mercadopago.cl/developers → Tus integraciones**, crea una aplicación (o usa la que ya tengas) y en su configuración agrega la **URL de redireccionamiento (Redirect URL)**: `https://TU-SITIO.vercel.app/api/integrations/mp/callback` (exactamente igual a tu `APP_URL` + esa ruta).
+2. En **Credenciales → Producción** (actívalas si es la primera vez) copia el **Client ID** y el **Client Secret**.
+3. En Vercel agrega `MP_CLIENT_ID` y `MP_CLIENT_SECRET` y haz **Redeploy**.
+4. Listo: en *Plan e integraciones* de un curso Pro aparece **Conectar con Mercado Pago**. El permiso dura 6 meses y la plataforma lo renueva sola. Si no configuras esto, el tesorero puede igualmente pegar su Access Token.
+
+---
+
 ## Activar el envío de correos (Gmail, gratis y sin dominio)
 Sirve para: estado de cuenta en PDF a apoderados, recordatorios, boletas de eventos y avisos de solicitudes. Con Gmail puedes enviar a cualquier persona (límite de unos 500 correos al día).
 

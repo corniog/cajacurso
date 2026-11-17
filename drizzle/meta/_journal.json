@@ -43,6 +43,13 @@
       "when": 1794847311860,
       "tag": "0005_libro_contable",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794867376875,
+      "tag": "0006_mp_oauth",
+      "breakpoints": true
     }
   ]
 }

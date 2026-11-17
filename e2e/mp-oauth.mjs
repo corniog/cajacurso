@@ -1,0 +1,24 @@
+import { chromium } from "playwright-core";
+const BASE = "http://localhost:3000";
+const b = await chromium.launch({ executablePath: "/usr/bin/google-chrome", args: ["--no-sandbox"] });
+const c = await b.newContext(); const p = await c.newPage();
+const r = []; const ck = (n, ok, e = "") => { r.push(ok); console.log(`${ok ? "PASS" : "FAIL"}  ${n} ${e}`); };
+const st = Date.now();
+await p.goto(`${BASE}/register`); await p.fill("#name", "MP"); await p.fill("#email", `mp.${st}@prueba.cl`); await p.fill("#password", "clave-segura-123");
+await p.getByRole("button", { name: "Crear cuenta" }).click(); await p.waitForURL(/\/app$/);
+await p.goto(`${BASE}/app/new`); await p.fill("[name=school]", "Colegio MP"); await p.fill("[name=name]", "1A"); await p.fill("[name=monthlyFee]", "5000");
+await p.getByRole("button", { name: /Crear curso/ }).click(); await p.waitForURL(/\/app\/c\/[0-9a-f-]+$/);
+const id = p.url().split("/c/")[1];
+await p.goto(`${BASE}/app/c/${id}/plan`);
+ck("Sin Pro no aparece el botón", (await p.getByText("Conectar con Mercado Pago").count()) === 0);
+await p.getByRole("button", { name: /Probar Pro/ }).click(); await p.getByRole("button", { name: /Probar Pro/ }).waitFor({ state: "detached" });
+for (let i = 0; i < 10; i++) { await p.goto(`${BASE}/app/c/${id}/plan`); if (await p.getByRole("link", { name: "Conectar con Mercado Pago" }).count()) break; await p.waitForTimeout(700); }
+ck("Con Pro aparece el botón Conectar con Mercado Pago", (await p.getByRole("link", { name: "Conectar con Mercado Pago" }).count()) === 1);
+let target = "";
+await c.route("**/auth.mercadopago.com/**", (rt) => { target = rt.request().url(); rt.abort(); });
+await p.getByRole("link", { name: "Conectar con Mercado Pago" }).click().catch(() => {}); await p.waitForTimeout(1500);
+const u = target ? new URL(target) : null;
+ck("Redirige a Mercado Pago con client_id, redirect_uri y state", !!u && u.searchParams.get("client_id") === "123456" && u.searchParams.get("redirect_uri") === `${BASE}/api/integrations/mp/callback` && u.searchParams.get("state").startsWith(id + "."), target.slice(0, 90));
+const bad = await c.request.get(`${BASE}/api/integrations/mp/callback?code=x&state=${id}.falso`, { maxRedirects: 0 });
+ck("Callback con state inválido se rechaza (400)", bad.status() === 400);
+await b.close(); process.exit(r.every(Boolean) ? 0 : 1);

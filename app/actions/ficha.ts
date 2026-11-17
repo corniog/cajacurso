@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { getStudentByToken } from "@/lib/public-data";
-import { decrypt } from "@/lib/crypto";
-import { mpPreference } from "@/lib/mp";
+import { mpPreference, getCourseMpToken } from "@/lib/mp";
 import { hasFeature } from "@/lib/features";
 import { buildRows } from "@/lib/finance";
 import { appUrl } from "@/lib/course-data";
@@ -17,8 +16,8 @@ export async function payOnline(token: string, _: ActionState, fd: FormData): Pr
     const found = await getStudentByToken(token);
     if (!found) return { error: "Ficha no encontrada" };
     const { student, course } = found;
-    const [integ] = await db.select().from(schema.integrations).where(eq(schema.integrations.courseId, course.id)).limit(1);
-    if (!hasFeature(course, "mercadopago") || !integ?.mpAccessToken) return { error: "El pago en línea no está disponible en este curso." };
+    const mpToken = hasFeature(course, "mercadopago") ? await getCourseMpToken(course.id) : null;
+    if (!mpToken) return { error: "El pago en línea no está disponible en este curso." };
 
     const months = [...new Set(fd.getAll("months").map(Number))].filter((m) => course.months.includes(m)).sort((a, b) => a - b);
     if (!months.length) return { error: "Elige al menos un mes para pagar" };
@@ -31,7 +30,7 @@ export async function payOnline(token: string, _: ActionState, fd: FormData): Pr
     }, 0);
     if (amount <= 0) return { error: "Los meses elegidos ya están pagados" };
 
-    const res = await mpPreference(decrypt(integ.mpAccessToken)).create({
+    const res = await mpPreference(mpToken).create({
       body: {
         items: [{ id: "cuotas", title: `Cuotas ${course.name} · ${student.firstName} ${student.lastName}`, quantity: 1, unit_price: amount, currency_id: "CLP" }],
         external_reference: `g:${student.id}:${months.join(",")}`,
