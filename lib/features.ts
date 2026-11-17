@@ -9,6 +9,7 @@ export const FEATURES = {
   pdf: { label: "PDF para reunión y directivos", desc: "Descarga del reporte en PDF" },
   extras: { label: "Ingresos extra ilimitados", desc: "Sin tope de ingresos extra" },
   coTreasurer: { label: "Co-tesorero", desc: "Segundo tesorero con acceso de escritura" },
+  contributions: { label: "Aportes y colectas", desc: "Cobros distintos de la cuota (regalo, venta, compras) que los apoderados pagan o informan desde su ficha" },
   events: { label: "Ventas para eventos", desc: "Punto de venta con productos, boletas, fiado y presupuestos" },
 } as const;
 

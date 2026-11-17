@@ -28,6 +28,7 @@ export const courses = pgTable("courses", {
   features: jsonb("features").$type<Record<string, boolean>>().notNull().default({}),
   publicStudents: boolean("public_students").notNull().default(true), // lista abreviada en la vista por código
   publicExpenses: boolean("public_expenses").notNull().default(true), // gastos y boletas visibles para apoderados
+  transferInfo: text("transfer_info"), // datos bancarios para que los apoderados transfieran aportes
   directiveCode: text("directive_code").unique(), // acceso de solo lectura para directivos (null = desactivado)
   createdAt: createdAt(),
 }, (t) => [index("courses_owner_idx").on(t.ownerId)]);
@@ -201,6 +202,35 @@ export const eventSettings = pgTable("event_settings", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Colectas y aportes distintos de la cuota mensual (regalo de la profe, venta, compra…). */
+export const contributions = pgTable("contributions", {
+  id: id(),
+  courseId: uuid("course_id").notNull().references(() => courses.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  amount: integer("amount"), // monto sugerido por familia (null = cada uno decide)
+  dueDate: date("due_date"),
+  active: boolean("active").notNull().default(true),
+  createdAt: createdAt(),
+}, (t) => [index("contrib_course_idx").on(t.courseId)]);
+
+/** Aportes que informan o pagan los apoderados. Al confirmarse se registran solos como ingreso extra. */
+export const contributionPayments = pgTable("contribution_payments", {
+  id: id(),
+  courseId: uuid("course_id").notNull().references(() => courses.id, { onDelete: "cascade" }),
+  contributionId: uuid("contribution_id").references(() => contributions.id, { onDelete: "set null" }),
+  studentId: uuid("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+  concept: text("concept").notNull(),
+  amount: integer("amount").notNull(),
+  method: text("method", { enum: ["mercadopago", "transferencia"] }).notNull(),
+  status: text("status", { enum: ["pending", "confirmed", "rejected"] }).notNull().default("pending"),
+  note: text("note"), // N° de operación u observación del apoderado
+  externalId: text("external_id").unique(), // id del pago en Mercado Pago
+  extraIncomeId: uuid("extra_income_id"),
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+  createdAt: createdAt(),
+}, (t) => [index("contribpay_course_idx").on(t.courseId), index("contribpay_student_idx").on(t.studentId)]);
+
 /** Bitácora del libro contable: cada edición o eliminación de un movimiento queda registrada (auditoría). */
 export const ledgerAudit = pgTable("ledger_audit", {
   id: id(),
@@ -228,3 +258,5 @@ export type EventDoc = typeof eventDocs.$inferSelect;
 export type EventLine = typeof eventLines.$inferSelect;
 export type EventSettings = typeof eventSettings.$inferSelect;
 export type LedgerAudit = typeof ledgerAudit.$inferSelect;
+export type Contribution = typeof contributions.$inferSelect;
+export type ContributionPayment = typeof contributionPayments.$inferSelect;

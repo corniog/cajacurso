@@ -117,6 +117,8 @@ export async function editExtra(courseId: string, extraId: string, _: ActionStat
       if (!old) throw new Error("Movimiento no encontrado");
       const [ev] = await tx.select({ id: schema.events.id }).from(schema.events).where(eq(schema.events.extraIncomeId, old.id)).limit(1);
       if (ev) throw new Error("Este ingreso viene de un evento cerrado. Reábrelo en Ventas para eventos para corregirlo.");
+      const [ap] = await tx.select({ id: schema.contributionPayments.id }).from(schema.contributionPayments).where(eq(schema.contributionPayments.extraIncomeId, old.id)).limit(1);
+      if (ap) throw new Error("Este ingreso viene de un aporte confirmado de un apoderado. Se gestiona en Aportes y colectas.");
       const before = await dbTotals(courseId);
       if (p.data.amount < old.amount && before.balance - (old.amount - p.data.amount) < 0) {
         throw new Error("No cuadra: al bajar este ingreso el saldo en caja quedaría negativo (ya se gastó ese dinero).");
@@ -159,6 +161,8 @@ export async function deleteFromLedger(courseId: string, entity: "payment" | "ex
         if (!old) throw new Error("Movimiento no encontrado");
         const [ev] = await tx.select({ id: schema.events.id }).from(schema.events).where(eq(schema.events.extraIncomeId, old.id)).limit(1);
         if (ev) throw new Error("Este ingreso viene de un evento cerrado. Reábrelo en Ventas para eventos.");
+        const [ap] = await tx.select({ id: schema.contributionPayments.id }).from(schema.contributionPayments).where(eq(schema.contributionPayments.extraIncomeId, old.id)).limit(1);
+        if (ap) throw new Error("Este ingreso viene de un aporte confirmado de un apoderado. Se gestiona en Aportes y colectas.");
         if (before.balance - old.amount < 0) throw new Error("No cuadra: eliminar este ingreso dejaría el saldo en caja negativo.");
         await tx.delete(schema.extraIncomes).where(eq(schema.extraIncomes.id, old.id));
         await assertBalanced(tx, courseId, before, { extras: -old.amount });

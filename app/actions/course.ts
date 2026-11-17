@@ -333,6 +333,8 @@ export async function addExtra(courseId: string, _: ActionState, fd: FormData): 
 
 export async function deleteExtra(courseId: string, extraId: string) {
   await requireCourse(courseId, { write: true });
+  const [linked] = await db.select({ id: schema.contributionPayments.id }).from(schema.contributionPayments).where(eq(schema.contributionPayments.extraIncomeId, extraId)).limit(1);
+  if (linked) throw new Error("Este ingreso viene de un aporte confirmado. Gestiónalo en Aportes y colectas.");
   await db.delete(schema.extraIncomes).where(and(eq(schema.extraIncomes.id, extraId), eq(schema.extraIncomes.courseId, courseId)));
   refresh(courseId);
 }
