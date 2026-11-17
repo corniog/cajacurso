@@ -3,7 +3,8 @@ import { count, desc, eq, ilike, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { isAdminEmail } from "@/lib/admin";
 import { isPro } from "@/lib/plans";
-import { updateUserAdmin, setUserDisabled, resetUserPassword, deleteUserAdmin } from "@/app/actions/admin";
+import { FEATURES, FEATURE_KEYS, needsApproval } from "@/lib/features";
+import { updateUserAdmin, setUserDisabled, resetUserPassword, deleteUserAdmin, setUserFeatures } from "@/app/actions/admin";
 import ActionForm from "@/components/ActionForm";
 import ActionNotice from "@/components/ActionNotice";
 
@@ -52,6 +53,29 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/usua
                   ))}
                 </ul>
               )}
+              <details>
+                <summary className="cursor-pointer text-sm font-semibold text-brand">
+                  Funciones para todos sus cursos 👤{Object.keys(u.features ?? {}).length ? ` · ${Object.keys(u.features).length} con ajuste` : ""}
+                </summary>
+                <div className="mt-3 rounded-xl bg-bg p-4">
+                  <p className="mb-3 text-xs text-muted">Vale para TODOS sus cursos, también los que cree después. Si un curso tiene un ajuste propio (🏫 por curso, en Cursos), ese tiene prioridad. «Sin ajuste» deja decidir al plan de cada curso.</p>
+                  <ActionForm action={setUserFeatures.bind(null, u.id)} submit="Guardar funciones del usuario" resetOnSuccess={false}>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {FEATURE_KEYS.map((k) => {
+                        const o = u.features?.[k];
+                        return (
+                          <label key={k} className="flex items-start justify-between gap-3 rounded-lg border border-line bg-white p-3 text-sm">
+                            <span><b>{FEATURES[k].label}</b><br /><span className="text-xs text-muted">{FEATURES[k].desc}</span></span>
+                            <select name={k} defaultValue={o === true ? "on" : o === false ? "off" : "plan"} className="input !w-auto !py-1.5 text-xs">
+                              <option value="plan">{needsApproval(k) ? "Sin ajuste (apagada)" : "Sin ajuste (según plan)"}</option><option value="on">Activada</option><option value="off">Desactivada</option>
+                            </select>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </ActionForm>
+                </div>
+              </details>
               <details>
                 <summary className="cursor-pointer text-sm font-semibold text-brand">Administrar usuario</summary>
                 <div className="mt-3 space-y-4 rounded-xl bg-bg p-4">

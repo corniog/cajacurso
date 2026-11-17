@@ -47,7 +47,7 @@ export async function createCourse(_: ActionState, fd: FormData): Promise<Action
     for (let i = 0; ; i++) {
       try {
         const [c] = await db.insert(schema.courses).values({
-          ownerId: user.id, school: d.school, name: d.name, year: d.year, monthlyFee: d.monthlyFee,
+          ownerId: user.id, ownerFeatures: user.features ?? {}, school: d.school, name: d.name, year: d.year, monthlyFee: d.monthlyFee,
           months: monthRange(d.startMonth, d.endMonth), code: courseCode(d.name),
         }).returning({ id: schema.courses.id });
         id = c.id;

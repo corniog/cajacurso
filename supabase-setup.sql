@@ -201,6 +201,7 @@ CREATE TABLE "events" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 ALTER TABLE "courses" ADD COLUMN "features" jsonb DEFAULT '{}'::jsonb NOT NULL;
+ALTER TABLE "courses" ADD COLUMN "owner_features" jsonb DEFAULT '{}'::jsonb NOT NULL;
 ALTER TABLE "event_docs" ADD CONSTRAINT "event_docs_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "event_docs" ADD CONSTRAINT "event_docs_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "event_lines" ADD CONSTRAINT "event_lines_doc_id_event_docs_id_fk" FOREIGN KEY ("doc_id") REFERENCES "public"."event_docs"("id") ON DELETE cascade ON UPDATE no action;
@@ -286,6 +287,7 @@ CREATE TABLE "support_requests" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 ALTER TABLE "users" ADD COLUMN "disabled" boolean DEFAULT false NOT NULL;
+ALTER TABLE "users" ADD COLUMN "features" jsonb DEFAULT '{}'::jsonb NOT NULL;
 ALTER TABLE "support_requests" ADD CONSTRAINT "support_requests_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "support_requests" ADD CONSTRAINT "support_requests_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
 CREATE INDEX "support_status_idx" ON "support_requests" USING btree ("status");

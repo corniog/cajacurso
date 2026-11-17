@@ -211,3 +211,25 @@ export async function deleteCourseAdmin(courseId: string, _: ActionState, fd: Fo
     return { ok: "Curso eliminado" };
   } catch (e) { return fail(e); }
 }
+
+/** Funciones para TODOS los cursos de un usuario (incluye los que cree después). Un ajuste a nivel de curso tiene prioridad. */
+export async function setUserFeatures(userId: string, _: ActionState, fd: FormData): Promise<ActionState> {
+  try {
+    await requireAdmin();
+    const u = await getUserRow(userId);
+    const features: Record<string, boolean> = {};
+    for (const k of FEATURE_KEYS) {
+      const v = String(fd.get(k) ?? "plan");
+      if (v === "on") features[k] = true;
+      else if (v === "off") features[k] = false;
+    }
+    await db.transaction(async (tx) => {
+      await tx.update(schema.users).set({ features }).where(eq(schema.users.id, u.id));
+      await tx.update(schema.courses).set({ ownerFeatures: features }).where(eq(schema.courses.ownerId, u.id));
+    });
+    refresh();
+    revalidatePath("/app", "layout");
+    const on = Object.values(features).filter(Boolean).length, off = Object.values(features).filter((x) => !x).length;
+    return { ok: `Funciones del usuario guardadas (${on} activadas, ${off} desactivadas) para todos sus cursos` };
+  } catch (e) { return fail(e); }
+}

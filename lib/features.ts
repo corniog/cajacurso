@@ -19,11 +19,20 @@ export const FEATURE_KEYS = Object.keys(FEATURES) as FeatureKey[];
 /** Funciones que el plan NO incluye: solo se activan si el administrador las aprueba (o las otorga) para ese curso. */
 export const needsApproval = (key: FeatureKey) => "needsApproval" in FEATURES[key];
 
-/** Valor explícito del administrador (si existe) o, si no, lo que da el plan. */
-export function hasFeature(course: Pick<Course, "proUntil" | "features">, key: FeatureKey): boolean {
-  const o = course.features?.[key];
-  if (o === true) return true;
-  if (o === false) return false;
-  if (needsApproval(key)) return false;
-  return !!course.proUntil && course.proUntil.getTime() > Date.now();
+export type FeatureSource = "curso" | "usuario" | "plan" | "apagada";
+type FeatureCourse = Pick<Course, "proUntil" | "features" | "ownerFeatures">;
+
+/**
+ * Orden de prioridad: 1) lo que el administrador fijó para ESE curso, 2) lo que fijó para el USUARIO dueño
+ * (vale para todos sus cursos, también los que cree después), 3) lo que da el plan.
+ */
+export function featureStatus(course: FeatureCourse, key: FeatureKey): { on: boolean; source: FeatureSource } {
+  const c = course.features?.[key];
+  if (c === true || c === false) return { on: c, source: "curso" };
+  const u = course.ownerFeatures?.[key];
+  if (u === true || u === false) return { on: u, source: "usuario" };
+  if (needsApproval(key)) return { on: false, source: "apagada" };
+  return { on: !!course.proUntil && course.proUntil.getTime() > Date.now(), source: "plan" };
 }
+
+export const hasFeature = (course: FeatureCourse, key: FeatureKey) => featureStatus(course, key).on;

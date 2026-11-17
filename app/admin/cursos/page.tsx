@@ -3,7 +3,9 @@ import { db, schema } from "@/lib/db";
 import ActionForm from "@/components/ActionForm";
 import ActionNotice from "@/components/ActionNotice";
 import { deleteCourseAdmin, grantPro, setProUntil, revokePro, resetTrial, setFeatures } from "@/app/actions/admin";
-import { FEATURES, FEATURE_KEYS, hasFeature, needsApproval } from "@/lib/features";
+import { FEATURES, FEATURE_KEYS, featureStatus, needsApproval } from "@/lib/features";
+
+const ORIGEN = { curso: "🏫 por curso", usuario: "👤 por usuario", plan: "💳 por plan", apagada: "⛔ apagada (sin aprobar)" } as const;
 import { isPro } from "@/lib/plans";
 import { clp } from "@/lib/finance";
 
@@ -76,16 +78,17 @@ export default async function CoursesAdminPage({ searchParams }: PageProps<"/adm
                   Funciones del curso{Object.keys(c.features ?? {}).length ? ` · ${Object.keys(c.features).length} con ajuste manual` : ""}
                 </summary>
                 <div className="mt-3 rounded-xl bg-bg p-4">
-                  <p className="mb-3 text-xs text-muted">«Según el plan» = disponible solo con Plan Pro. «Activada» la habilita aunque el curso sea gratis; «Desactivada» la bloquea aunque tenga Pro.</p>
+                  <p className="mb-3 text-xs text-muted">Ajuste solo para ESTE curso; tiene prioridad sobre el del usuario. «Sin ajuste de curso» deja decidir al usuario dueño o al plan. «Activada» la habilita aunque el curso sea gratis; «Desactivada» la bloquea aunque tenga Pro.</p>
                   <ActionForm action={setFeatures.bind(null, c.id)} submit="Guardar funciones" resetOnSuccess={false}>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {FEATURE_KEYS.map((k) => {
                         const o = c.features?.[k];
+                        const st = featureStatus(c, k);
                         return (
                           <label key={k} className="flex items-start justify-between gap-3 rounded-lg border border-line bg-white p-3 text-sm">
-                            <span><b>{FEATURES[k].label}</b><br /><span className="text-xs text-muted">{FEATURES[k].desc} · hoy: {hasFeature(c, k) ? "✅ disponible" : "🔒 bloqueada"}</span></span>
+                            <span><b>{FEATURES[k].label}</b><br /><span className="text-xs text-muted">{FEATURES[k].desc} · hoy: {st.on ? "✅ disponible" : "🔒 bloqueada"} · origen: <b>{ORIGEN[st.source]}</b></span></span>
                             <select name={k} defaultValue={o === true ? "on" : o === false ? "off" : "plan"} className="input !w-auto !py-1.5 text-xs">
-                              <option value="plan">{needsApproval(k) ? "Apagada (sin aprobar)" : "Según el plan"}</option><option value="on">Activada</option><option value="off">Desactivada</option>
+                              <option value="plan">{needsApproval(k) ? "Sin ajuste de curso (usuario o apagada)" : "Sin ajuste de curso (usuario o plan)"}</option><option value="on">Activada</option><option value="off">Desactivada</option>
                             </select>
                           </label>
                         );

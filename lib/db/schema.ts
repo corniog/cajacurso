@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   passwordHash: text("password_hash").notNull(),
   disabled: boolean("disabled").notNull().default(false), // cuenta suspendida por el administrador
+  features: jsonb("features").$type<Record<string, boolean>>().notNull().default({}), // funciones activadas/bloqueadas para TODOS sus cursos
   createdAt: createdAt(),
 });
 
@@ -27,6 +28,7 @@ export const courses = pgTable("courses", {
   proTrialUsed: boolean("pro_trial_used").notNull().default(false),
   // Funciones activadas o desactivadas a mano por el administrador (clave -> true/false). Sin clave = según el plan.
   features: jsonb("features").$type<Record<string, boolean>>().notNull().default({}),
+  ownerFeatures: jsonb("owner_features").$type<Record<string, boolean>>().notNull().default({}), // copia de users.features del dueño
   publicStudents: boolean("public_students").notNull().default(true), // lista abreviada en la vista por código
   publicExpenses: boolean("public_expenses").notNull().default(true), // gastos y boletas visibles para apoderados
   transferInfo: text("transfer_info"), // datos bancarios para que los apoderados transfieran aportes

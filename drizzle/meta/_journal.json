@@ -64,6 +64,13 @@
       "when": 1794911003883,
       "tag": "0008_superusuario",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794997403883,
+      "tag": "0009_funciones_usuario",
+      "breakpoints": true
     }
   ]
 }
