@@ -17,8 +17,8 @@ export default async function CourseLayout({ children, params }: LayoutProps<"/a
         {isPro(course) ? <span className="badge bg-amber-100 text-amber-900">Plan Pro</span> : <span className="badge bg-slate-100 text-slate-600">Plan Gratis</span>}
         {role === "viewer" && <span className="badge bg-blue-100 text-blue-800">Solo lectura</span>}
       </div>
-      <div className="grid gap-5 md:grid-cols-[220px_1fr]">
-        <aside className="no-print"><CourseNav courseId={id} /></aside>
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
+        <aside className="no-print sticky top-0 z-20 -mx-4 min-w-0 md:static md:mx-0"><CourseNav courseId={id} /></aside>
         <section className="min-w-0 space-y-5">{children}</section>
       </div>
     </div>
