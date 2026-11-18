@@ -2,8 +2,8 @@
 import { useState } from "react";
 
 /** Gráficos sencillos en SVG (sin librerías) con cuadro flotante al pasar el mouse o tocar. */
-const GREEN = "#2f9360", GOLD = "#c4a962", RED = "#c0504d";
-export const KPI_COLORS = { green: GREEN, gold: GOLD, red: RED };
+import { KPI_COLORS } from "@/lib/kpi-colors";
+const GREEN = KPI_COLORS.green, RED = KPI_COLORS.red;
 
 type Tip = { x: number; y: number; title: string; lines: { color?: string; text: string }[] } | null;
 function Tooltip({ tip, W, H }: { tip: Tip; W: number; H: number }) {

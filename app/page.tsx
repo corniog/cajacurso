@@ -50,7 +50,7 @@ export default async function Home() {
             <span className="badge bg-brand-soft text-brand-dark">Tesorería escolar en Chile</span>
             <h1 className="text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">{BRAND.tagline}</h1>
             <p className="max-w-lg text-lg text-muted">
-              Pagos, gastos y la ficha del apoderado, sin Excel. El plan base es gratis y el Plan Pro suma Mercado Pago, Drive y recordatorios.
+              Pagos, gastos y la ficha del apoderado, sin Excel. El plan base es gratis y el Plan Pro suma correos con PDF, recordatorios, ventas para eventos, aportes y más.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/register" className="btn !px-6 !py-3 text-base">Crear cuenta gratis</Link>
@@ -127,7 +127,7 @@ export default async function Home() {
                 <h3 className="text-xl font-bold">Pro mensual</h3>
                 <p className="my-3 text-3xl font-extrabold">{clp(PLANS.monthly.price)} <span className="text-base font-medium text-muted">/ mes</span></p>
                 <ul className="flex-1 space-y-1.5 text-sm">
-                  <li>✓ Todo lo de Gratis</li><li>✓ Mercado Pago en la ficha</li><li>✓ Google Drive para boletas</li>
+                  <li>✓ Todo lo de Gratis</li><li>✓ Aportes y colectas</li><li>✓ Ventas para eventos</li><li>✓ Google Drive para boletas</li>
                   <li>✓ Correos y recordatorios</li><li>✓ Ingresos extra ilimitados</li><li>✓ Segundo tesorero (vista o admin)</li>
                   <li>✓ PDF para la reunión de apoderados</li>
                 </ul>

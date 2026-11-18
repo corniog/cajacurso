@@ -1,4 +1,5 @@
-import { Donut, LineChart, BarChart, KPI_COLORS as C } from "@/components/KpiCharts";
+import { Donut, LineChart, BarChart } from "@/components/KpiCharts";
+import { KPI_COLORS as C } from "@/lib/kpi-colors";
 import { MONTH_SHORT, MONTH_NAMES, clp } from "@/lib/finance";
 import type { Course } from "@/lib/db/schema";
 import type { Summary } from "@/lib/finance";
