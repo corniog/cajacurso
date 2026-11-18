@@ -76,7 +76,7 @@ export default function PaymentGrid({
 
   return (
     <>
-      <div className="card overflow-x-auto !p-0">
+      <div className="card hidden overflow-x-auto !p-0 md:block">
         <table className="w-full min-w-[860px] border-collapse">
           <thead>
             <tr className="border-b border-line">
@@ -131,6 +131,44 @@ export default function PaymentGrid({
             )}
           </tbody>
         </table>
+      </div>
+      {/* Celular: una tarjeta por alumno, con los meses como botones grandes */}
+      <div className="space-y-3 md:hidden">
+        {students.map((s) => {
+          const applicable = months.filter((m) => s.months[m].status !== "no_aplica");
+          const paid = applicable.filter((m) => s.months[m].status === "pagado").length;
+          return (
+            <div key={s.id} className={`card !p-3 ${s.active ? "" : "opacity-50"}`}>
+              <div className="mb-2 flex items-start justify-between gap-2">
+                <p className="font-semibold leading-tight">{s.name}{!s.active && <span className="ml-1 text-xs font-normal text-muted">(inactivo)</span>}</p>
+                <span className="shrink-0 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-semibold text-brand">{paid}/{applicable.length} pagados</span>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {months.map((m) => {
+                  const c = s.months[m];
+                  return (
+                    <button key={m} type="button" disabled={c.status === "no_aplica"} onClick={() => openAt(s, m)}
+                      aria-label={`Móvil · ${s.name}, ${MONTH_NAMES[m - 1]}: ${LABEL[c.status]}`}
+                      className={`flex min-h-12 flex-col items-center justify-center rounded-xl px-1 py-1 text-xs font-semibold transition cursor-pointer ${COLORS[c.status]}`}>
+                      <span className="text-[11px] font-medium opacity-70">{MONTH_SHORT[m - 1]}</span>
+                      <span className="text-sm leading-tight">{c.status === "pagado" ? "✓" : c.status === "abonado" ? clp(c.paid) : c.status === "no_aplica" ? "—" : "·"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {canWrite && (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {firstPending(s) !== null && <button type="button" className="btn !px-3 !py-1.5 text-xs" onClick={() => openRow(s)}>Abono</button>}
+                  {s.wa ? <a className="btn-ghost !px-3 !py-1.5 text-xs" href={s.wa} target="_blank" rel="noopener noreferrer">💬 WhatsApp</a> : <span className="text-xs text-muted">💬 sin teléfono</span>}
+                  {pro && s.hasEmail && <ActionNotice label="✉️ Correo" className="btn-ghost !px-3 !py-1.5 text-xs" action={() => sendStatementOne(courseId, s.id)} />}
+                  {pro && !s.hasEmail && <span className="text-xs text-muted">✉️ sin correo</span>}
+                  {!pro && <Link href={`/app/c/${courseId}/plan`} className="text-xs text-muted underline">✉️ Correo (Pro)</Link>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {!students.length && <div className="card text-sm text-muted">Aún no hay alumnos. Agrégalos en la sección Alumnos.</div>}
       </div>
       <p className="mt-3 flex flex-wrap gap-3 text-xs text-muted">
         <span><b className="rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-900">✓</b> Pagado</span>
