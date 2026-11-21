@@ -14,3 +14,5 @@ ALTER TABLE "center_links" ADD CONSTRAINT "center_links_center_id_users_id_fk" F
 ALTER TABLE "center_links" ADD CONSTRAINT "center_links_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "center_links_unique" ON "center_links" USING btree ("center_id","course_id");--> statement-breakpoint
 ALTER TABLE "courses" ADD CONSTRAINT "courses_audit_code_unique" UNIQUE("audit_code");
+--> statement-breakpoint
+UPDATE "courses" SET "audit_code" = 'AUD-' || (SELECT string_agg(substr('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 1 + floor(random() * 32)::int, 1), '') FROM generate_series(1, 12) g(i) WHERE "courses"."id" IS NOT NULL) WHERE "audit_code" IS NULL;

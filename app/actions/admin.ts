@@ -9,6 +9,7 @@ import { PLANS } from "@/lib/brand";
 import { FEATURE_KEYS } from "@/lib/features";
 import { adminEmails } from "@/lib/admin";
 import { hashPassword } from "@/lib/auth";
+import { newAuditCode } from "@/lib/util";
 import { randomBytes } from "node:crypto";
 import type { ActionState } from "@/app/actions/course";
 
@@ -245,13 +246,36 @@ export async function setCenterProfile(userId: string, _: ActionState, fd: FormD
       centerSchool: z.string().trim().max(120).optional().transform((v) => v || null),
       centerEnabled: z.string().optional(),
     }).parse(Object.fromEntries(fd));
-    if (d.accountType === "centro" && !d.centerSchool) throw new Error("Indica el colegio que podrá auditar este centro de padres");
     await db.update(schema.users).set({
       accountType: d.accountType, centerSchool: d.accountType === "centro" ? d.centerSchool : null,
       centerEnabled: d.accountType === "centro" && d.centerEnabled === "on",
     }).where(eq(schema.users.id, u.id));
     refresh();
     return { ok: d.accountType === "centro"
-      ? (d.centerEnabled === "on" ? `Perfil Centro de padres ACTIVADO para ${d.centerSchool}` : "Perfil Centro de padres guardado, sin activar") : "Cuenta de tesorero" };
+      ? (d.centerEnabled === "on" ? "Perfil Centro de padres ACTIVADO" : "Perfil Centro de padres guardado, sin activar") : "Cuenta de tesorero" };
+  } catch (e) { return fail(e); }
+}
+
+/** Código de auditoría del curso: lo restablece SOLO el administrador. Corta el acceso de todos los centros vinculados. */
+export async function resetAuditCode(courseId: string): Promise<ActionState> {
+  try {
+    await requireAdmin();
+    const c = await getCourse(courseId);
+    await db.transaction(async (tx) => {
+      await tx.update(schema.courses).set({ auditCode: newAuditCode() }).where(eq(schema.courses.id, c.id));
+      await tx.delete(schema.centerLinks).where(eq(schema.centerLinks.courseId, c.id));
+    });
+    refresh();
+    return { ok: "Código restablecido. Los centros de padres que lo tenían perdieron el acceso; el tesorero puede entregar el código nuevo." };
+  } catch (e) { return fail(e); }
+}
+
+/** Quita el acceso de UN centro de padres a un curso (el código del curso no cambia). */
+export async function removeCenterLink(courseId: string, centerId: string): Promise<ActionState> {
+  try {
+    await requireAdmin();
+    await db.delete(schema.centerLinks).where(and(eq(schema.centerLinks.courseId, uuid.parse(courseId)), eq(schema.centerLinks.centerId, uuid.parse(centerId))));
+    refresh();
+    return { ok: "Acceso del centro de padres retirado" };
   } catch (e) { return fail(e); }
 }

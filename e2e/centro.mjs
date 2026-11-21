@@ -16,10 +16,8 @@ const mkCourse = async (t, school, name) => {
   await t.getByRole("button", { name: /Crear curso/ }).click(); await t.waitForURL(/\/app\/c\/[0-9a-f-]+$/); return t.url().split("/c/")[1];
 };
 const fw = (p, btn) => p.locator("form", { has: p.getByRole("button", { name: btn, exact: true }) }).first();
-const genCode = async (t, id) => {
+const getCode = async (t, id) => {
   await t.goto(`${BASE}/app/c/${id}/accesos`);
-  const btn = t.getByRole("button", { name: /Generar código para el centro de padres/ });
-  if (await btn.count()) await btn.click();
   const c = t.locator("code", { hasText: /^AUD-/ }); await c.waitFor(); return (await c.innerText()).trim();
 };
 try {
@@ -31,12 +29,13 @@ try {
   await f.getByRole("button", { name: "Agregar alumno", exact: true }).click(); await A.getByText("Alumno agregado").first().waitFor();
   await A.goto(`${BASE}/app/c/${idA}/pagos`); await A.locator('[aria-label^="Soto Villalobos, Matías, Marzo:"]').click(); await A.getByRole("button", { name: "Registrar pago" }).click(); await A.waitForSelector("dialog[open]", { state: "detached" });
   await A.goto(`${BASE}/app/c/${idA}/gastos`); const g = fw(A, "Guardar gasto"); await g.locator("[name=description]").fill("Útiles"); await g.locator("[name=amount]").fill("1500"); await g.getByRole("button", { name: "Guardar gasto", exact: true }).click(); await A.getByText("Gasto registrado").first().waitFor();
-  const codeA = await genCode(A, idA);
-  ck("Tesorero genera código AUD-…", /^AUD-[A-Z2-9]{12}$/.test(codeA));
+  const codeA = await getCode(A, idA);
+  ck("El curso nace con su código AUD-… (sin que el tesorero haga nada)", /^AUD-[A-Z2-9]{12}$/.test(codeA));
+  ck("El tesorero no tiene botones para cambiar ni quitar el código", await A.getByRole("button", { name: /Generar|Desactivar|Restablecer/ }).count() === 0);
   // Tesorero B: otro colegio
-  const B = await pg(); await register(B, "Tesorero Otro", `b.${ts}@prueba.cl`, "tesorero"); const idB = await mkCourse(B, `Otro Colegio ${ts}`, "6° B"); const codeB = await genCode(B, idB);
+  const B = await pg(); await register(B, "Tesorero Otro", `b.${ts}@prueba.cl`, "tesorero"); const idB = await mkCourse(B, `Otro Colegio ${ts}`, "6° B"); const codeB = await getCode(B, idB);
   // Centro: queda pendiente
-  const emailC = `c.${ts}@prueba.cl`; const C = await pg(); await register(C, "Centro Norte", emailC, "centro", SCHOOL.toUpperCase().replace("COLEGIO", "colegio"));
+  const emailC = `c.${ts}@prueba.cl`; const C = await pg(); await register(C, "Centro Norte", emailC, "centro", "");
   ck("Centro nuevo ve 'pendiente de activación'", await C.getByText("pendiente de activación").count() > 0);
   ck("Sin activar no hay formulario para agregar cursos", await C.getByRole("button", { name: "Agregar curso" }).count() === 0);
   ck("Centro no entra al panel de tesorero (/app → /centro)", (await C.goto(`${BASE}/app`), /\/centro$/.test(C.url())));
@@ -51,12 +50,10 @@ try {
   await C.goto(`${BASE}/centro`);
   await C.fill("#audit-code", "AUD-NOEXISTE123"); await C.getByRole("button", { name: "Agregar curso" }).click();
   ck("Código inexistente se rechaza", await C.getByText(/No encontramos un curso|no es válido/).first().waitFor({ timeout: 5000 }).then(() => true, () => false));
-  await C.fill("#audit-code", codeB); await C.getByRole("button", { name: "Agregar curso" }).click();
-  ck("Curso de OTRO colegio se rechaza", await C.getByText(/pertenece a otro colegio/).first().waitFor({ timeout: 5000 }).then(() => true, () => false));
   await C.waitForTimeout(1000); await C.fill("#audit-code", codeA); await C.getByRole("button", { name: "Agregar curso" }).click(); await C.getByRole("link", { name: "Auditar curso" }).waitFor();
-  ck("Curso del mismo colegio se agrega (aunque el nombre difiera en mayúsculas)", true);
+  ck("Con solo el código el curso queda agregado", true);
   await C.reload(); ck("Aparece en la lista con libro cuadrado", await C.getByText("6° A · 2026").count() > 0 || await C.getByText(/6° A/).count() > 0);
-  ck("Curso del otro colegio NO aparece", await C.getByText("6° B").count() === 0);
+  ck("Un curso sin agregar NO aparece (solo lo que entregó cada tesorero)", await C.getByText("6° B").count() === 0);
   // Auditoría
   await C.getByRole("link", { name: "Auditar curso" }).click(); await C.waitForURL(/\/centro\/c\//); const urlA = C.url();
   ck("Ve el libro y la cuadratura", await C.getByText(/El libro cuadra/).count() > 0);
@@ -66,16 +63,28 @@ try {
   const x = await C.request.get(`${urlA.replace("/centro/c/", "/api/centro/c/")}/libro/xlsx`); const pdf = await C.request.get(`${urlA.replace("/centro/c/", "/api/centro/c/")}/libro/pdf`);
   ck("Descarga Excel y PDF del libro", x.status() === 200 && pdf.status() === 200 && (await pdf.body()).subarray(0, 4).toString() === "%PDF");
   // Aislamiento: otro centro de otro colegio no ve el curso de A
-  const C2 = await pg(); await register(C2, "Centro Otro", `c2.${ts}@prueba.cl`, "centro", "Otro Colegio");
+  const C2 = await pg(); await register(C2, "Centro Otro", `c2.${ts}@prueba.cl`, "centro", "");
   const r = await C2.request.get(`${urlA.replace("/centro/c/", "/api/centro/c/")}/libro/xlsx`);
   ck("Otro centro no puede descargar el libro (404)", r.status() === 404);
   const r2 = await C2.goto(urlA); ck("Otro centro no puede abrir la página del curso (404)", r2.status() === 404);
-  // Tesorero corta el acceso con un código nuevo
+  // Solo el administrador restablece el código o quita el acceso
   await A.goto(`${BASE}/app/c/${idA}/accesos`); ck("Tesorero ve qué centro tiene acceso", await A.getByText(/Centro Norte/).count() > 0);
-  A.once("dialog", (d) => d.accept()); await A.getByRole("button", { name: "Generar uno nuevo" }).last().click(); await A.waitForTimeout(1500);
-  const r3 = await C.goto(urlA); ck("Con código nuevo el centro pierde el acceso (404)", r3.status() === 404);
-  await C.goto(`${BASE}/centro`); ck("El centro ve el aviso de código nuevo", await C.getByText(/generó un código nuevo/).count() > 0);
-  // Admin desactiva → pierde todo
+  await ad.goto(`${BASE}/admin/cursos?q=${encodeURIComponent(SCHOOL)}`);
+  const card = ad.locator("li", { hasText: "6° A" }).first();
+  await card.locator("summary", { hasText: "Centro de padres" }).click();
+  ck("Admin ve el código y el centro vinculado", await card.getByText(codeA).count() > 0 && await card.getByText("Centro Norte").count() > 0);
+  ad.once("dialog", (d) => d.accept()); await card.getByRole("button", { name: "Restablecer código" }).click(); await card.getByText(/Código restablecido/).waitFor({ timeout: 8000 }).catch(() => {});
+  const r3 = await C.goto(urlA); ck("Tras restablecer, el centro pierde el acceso (404)", r3.status() === 404);
+  const newCode = await getCode(A, idA); ck("El tesorero ve el código nuevo (distinto)", newCode !== codeA && /^AUD-/.test(newCode));
+  await C.goto(`${BASE}/centro`); await C.fill("#audit-code", codeA); await C.getByRole("button", { name: "Agregar curso" }).click();
+  ck("El código antiguo ya no sirve", await C.getByText(/No encontramos un curso/).first().waitFor({ timeout: 5000 }).then(() => true, () => false));
+  await C.waitForTimeout(1000); await C.fill("#audit-code", newCode); await C.getByRole("button", { name: "Agregar curso" }).click(); await C.getByRole("link", { name: "Auditar curso" }).waitFor();
+  ck("Con el código nuevo vuelve a entrar", true);
+  await ad.goto(`${BASE}/admin/cursos?q=${encodeURIComponent(SCHOOL)}`);
+  const card2 = ad.locator("li", { hasText: "6° A" }).first(); await card2.locator("summary", { hasText: "Centro de padres" }).click();
+  ad.once("dialog", (d) => d.accept()); await card2.getByRole("button", { name: "Quitar acceso" }).click(); await card2.getByText("Ningún centro de padres lo ha agregado").waitFor({ timeout: 8000 }).catch(() => {});
+  const r4 = await C.goto(urlA); ck("Admin quita el acceso de un centro y ya no ve el curso (404)", r4.status() === 404);
+  // Admin desactiva el perfil → pendiente
   await ad.goto(`${BASE}/admin/usuarios?q=${encodeURIComponent(emailC)}`);
   const li2 = ad.locator("li", { hasText: emailC }); await li2.locator("summary", { hasText: "Perfil Centro de padres" }).click(); await li2.getByLabel(/Perfil activado/).uncheck(); await li2.getByRole("button", { name: "Guardar perfil" }).click(); await li2.getByText(/pendiente de activar/).waitFor();
   await C.goto(`${BASE}/centro`); ck("Admin desactiva el perfil y vuelve a 'pendiente'", await C.getByText("pendiente de activación").count() > 0);

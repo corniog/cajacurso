@@ -14,7 +14,7 @@ export default async function CenterHome() {
       <div className="card mx-auto max-w-xl space-y-3 text-center">
         <p className="text-4xl">⏳</p>
         <h1 className="text-xl font-bold">Tu perfil está pendiente de activación</h1>
-        <p className="text-muted">Creaste una cuenta de centro de padres para <b>{user.centerSchool}</b>. El administrador de CajaCurso debe activarla antes de que puedas agregar cursos. Vuelve a entrar en un momento; no necesitas hacer nada más.</p>
+        <p className="text-muted">Creaste una cuenta de centro de padres{user.centerSchool ? <> (<b>{user.centerSchool}</b>)</> : null}. El administrador de CajaCurso debe activarla antes de que puedas agregar cursos. Vuelve a entrar en un momento; no necesitas hacer nada más.</p>
       </div>
     );
   }
@@ -27,7 +27,7 @@ export default async function CenterHome() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Cursos de {user.centerSchool}</h1>
+        <h1 className="text-2xl font-bold">Cursos que auditas{user.centerSchool ? ` · ${user.centerSchool}` : ""}</h1>
         <p className="text-sm text-muted">Solo lectura: resumen, libro contable y gastos con boleta de los cursos que agregaste con su código de auditoría.</p>
       </div>
 
@@ -41,7 +41,7 @@ export default async function CenterHome() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         <section className="space-y-3">
-          {data.length === 0 && <div className="card text-sm text-muted">Aún no tienes cursos. Pídele a cada tesorero su <b>código de auditoría</b> (lo genera en Accesos y QR → “Centro de padres”) y agrégalo aquí.</div>}
+          {data.length === 0 && <div className="card text-sm text-muted">Aún no tienes cursos. Pídele a cada tesorero su <b>código de auditoría</b> (está en su pantalla Accesos y QR → “Centro de padres”) y agrégalo aquí.</div>}
           {data.map(({ l, d }) => (
             <article key={l.course.id} className="card space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -74,7 +74,7 @@ export default async function CenterHome() {
         </section>
         <aside className="card h-fit space-y-2">
           <h2 className="font-bold">Agregar un curso</h2>
-          <p className="text-xs text-muted">Solo se aceptan cursos de <b>{user.centerSchool}</b>. Si el curso pertenece a otro colegio, el sistema lo rechaza.</p>
+          <p className="text-xs text-muted">Pega el código que te entregó el tesorero del curso. Cada curso tiene su propio código y el tesorero es responsable de entregarlo solo al centro de padres de su colegio.</p>
           <AddCourseByCode />
         </aside>
       </div>

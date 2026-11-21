@@ -6,7 +6,7 @@ import { z } from "zod";
 import ExcelJS from "exceljs";
 import { db, schema } from "@/lib/db";
 import { requireUser, requireCourse } from "@/lib/auth";
-import { courseCode, newToken, newStudentCode, normalizeRut } from "@/lib/util";
+import { courseCode, newAuditCode, newToken, newStudentCode, normalizeRut } from "@/lib/util";
 import { allocateAcrossMonths, PAYMENT_METHODS, EXPENSE_CATEGORIES } from "@/lib/finance";
 import { canAddExtra } from "@/lib/plans";
 import { PLANS } from "@/lib/brand";
@@ -48,7 +48,7 @@ export async function createCourse(_: ActionState, fd: FormData): Promise<Action
       try {
         const [c] = await db.insert(schema.courses).values({
           ownerId: user.id, ownerFeatures: user.features ?? {}, school: d.school, name: d.name, year: d.year, monthlyFee: d.monthlyFee,
-          months: monthRange(d.startMonth, d.endMonth), code: courseCode(d.name),
+          months: monthRange(d.startMonth, d.endMonth), code: courseCode(d.name), auditCode: newAuditCode(),
         }).returning({ id: schema.courses.id });
         id = c.id;
         break;

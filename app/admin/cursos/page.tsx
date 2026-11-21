@@ -1,8 +1,8 @@
-import { desc, eq, ilike, or } from "drizzle-orm";
+import { desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import ActionForm from "@/components/ActionForm";
 import ActionNotice from "@/components/ActionNotice";
-import { deleteCourseAdmin, grantPro, setProUntil, revokePro, resetTrial, setFeatures } from "@/app/actions/admin";
+import { deleteCourseAdmin, grantPro, setProUntil, revokePro, resetTrial, setFeatures, resetAuditCode, removeCenterLink } from "@/app/actions/admin";
 import { FEATURES, FEATURE_KEYS, featureStatus, needsApproval } from "@/lib/features";
 
 const ORIGEN = { curso: "🏫 por curso", usuario: "👤 por usuario", plan: "💳 por plan", apagada: "⛔ apagada (sin aprobar)" } as const;
@@ -22,6 +22,8 @@ export default async function CoursesAdminPage({ searchParams }: PageProps<"/adm
     .where(q ? or(ilike(schema.courses.name, like), ilike(schema.courses.school, like), ilike(schema.courses.code, like), ilike(schema.users.email, like), ilike(schema.users.name, like)) : undefined)
     .orderBy(desc(schema.courses.createdAt)).limit(50);
 
+  const links = rows.length ? await db.select({ courseId: schema.centerLinks.courseId, centerId: schema.centerLinks.centerId, name: schema.users.name, email: schema.users.email, code: schema.centerLinks.code })
+    .from(schema.centerLinks).innerJoin(schema.users, eq(schema.centerLinks.centerId, schema.users.id)).where(inArray(schema.centerLinks.courseId, rows.map((r) => r.course.id))) : [];
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -71,6 +73,27 @@ export default async function CoursesAdminPage({ searchParams }: PageProps<"/adm
                     {pro && <ActionNotice className="btn-danger" label="Quitar Pro ahora" confirm={`¿Quitar el Plan Pro de ${c.name}? Vuelve a Gratis; no se borra ningún dato.`} action={revokePro.bind(null, c.id)} />}
                     {c.proTrialUsed && <ActionNotice label="Permitir otra prueba de 30 días" action={resetTrial.bind(null, c.id)} />}
                   </div>
+                </div>
+              </details>
+              <details>
+                <summary className="cursor-pointer text-sm font-semibold text-brand">Centro de padres 🏛️ · código de auditoría</summary>
+                <div className="mt-3 space-y-3 rounded-xl bg-bg p-4 text-sm">
+                  <p className="text-xs text-muted">El código se creó con el curso y es fijo: el tesorero solo puede entregarlo. Solo tú puedes quitar el acceso de un centro o restablecer el código.</p>
+                  <p>Código: <code className="rounded bg-blue-50 px-2 py-1 font-bold tracking-wider text-blue-900">{c.auditCode ?? "—"}</code></p>
+                  {(() => {
+                    const mine = links.filter((l) => l.courseId === c.id);
+                    return mine.length === 0 ? <p className="text-muted">Ningún centro de padres lo ha agregado.</p> : (
+                      <ul className="divide-y divide-line rounded-xl border border-line bg-white">
+                        {mine.map((l) => (
+                          <li key={l.centerId} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+                            <span><b>{l.name}</b> <span className="text-muted">{l.email}</span>{l.code !== c.auditCode && <span className="ml-2 text-xs text-amber-700">(código antiguo, sin acceso)</span>}</span>
+                            <ActionNotice className="btn-danger !px-2.5 !py-1 text-xs" label="Quitar acceso" confirm={`¿Quitar el acceso de ${l.name} a ${c.name}?`} action={removeCenterLink.bind(null, c.id, l.centerId)} />
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
+                  <ActionNotice className="btn-ghost" label="Restablecer código" confirm="Se creará un código nuevo y TODOS los centros de padres vinculados perderán el acceso. ¿Continuar?" action={resetAuditCode.bind(null, c.id)} />
                 </div>
               </details>
               <details>

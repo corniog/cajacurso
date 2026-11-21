@@ -7,12 +7,6 @@ import { requireUser } from "@/lib/auth";
 import { loadLedger } from "@/lib/ledger-data";
 import { maskName } from "@/lib/util";
 
-/** Compara colegios ignorando mayúsculas, tildes, puntuación y espacios repetidos. */
-export const normSchool = (s: string) =>
-  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-export const sameSchool = (a: string | null | undefined, b: string | null | undefined) =>
-  !!a && !!b && normSchool(a) !== "" && normSchool(a) === normSchool(b);
-
 /** Exige una cuenta de Centro de padres (la activación por el administrador se revisa aparte con `centerEnabled`). */
 export async function requireCenter(): Promise<User> {
   const user = await requireUser();
@@ -22,7 +16,7 @@ export async function requireCenter(): Promise<User> {
 
 export type CenterCourse = { course: Course; tesorero: string };
 
-/** Curso agregado a la vista del centro, solo si el vínculo sigue vigente (código vigente, mismo colegio, perfil activo). */
+/** Curso agregado a la vista del centro, solo si el vínculo sigue vigente (el código no fue restablecido por el administrador y el perfil está activo). */
 export async function getCenterCourse(user: User, courseId: string): Promise<Course | null> {
   if (user.accountType !== "centro" || !user.centerEnabled || user.disabled) return null;
   const [row] = await db.select({ course: schema.courses, link: schema.centerLinks })
@@ -30,7 +24,6 @@ export async function getCenterCourse(user: User, courseId: string): Promise<Cou
     .where(and(eq(schema.centerLinks.centerId, user.id), eq(schema.centerLinks.courseId, courseId))).limit(1);
   if (!row) return null;
   if (!row.course.auditCode || row.course.auditCode !== row.link.code) return null;
-  if (!sameSchool(row.course.school, user.centerSchool)) return null;
   return row.course;
 }
 
@@ -41,9 +34,7 @@ export async function listCenterLinks(user: User) {
     .where(eq(schema.centerLinks.centerId, user.id));
   return rows.map(({ course, link }) => {
     let reason: string | null = null;
-    if (!course.auditCode) reason = "El tesorero desactivó el acceso";
-    else if (course.auditCode !== link.code) reason = "El tesorero generó un código nuevo: pídelo y agrégalo otra vez";
-    else if (!sameSchool(course.school, user.centerSchool)) reason = "El colegio del curso ya no coincide con el de tu centro";
+    if (!course.auditCode || course.auditCode !== link.code) reason = "El administrador restableció el código de este curso: pide el código nuevo al tesorero y agrégalo otra vez";
     return { course, link, reason };
   }).sort((a, b) => a.course.name.localeCompare(b.course.name, "es", { numeric: true }));
 }

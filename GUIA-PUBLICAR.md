@@ -145,9 +145,9 @@ Avisos normales: Windows mostrará "editor desconocido" y Android pedirá permit
 Ante cualquier error, copia el mensaje (en Vercel: *Deployments → View logs*) y envíaselo a Claude.
 
 
-## Perfil Centro de padres (auditoría de un colegio)
-1. Antes de publicar la versión nueva, pega **`supabase-actualizacion-5.sql`** en Supabase → SQL Editor → Run.
-2. El centro de padres crea su cuenta en `/register` eligiendo **“Soy del centro de padres”** y escribiendo el colegio. Queda *pendiente*.
-3. Tú lo activas en **Administración → Usuarios → “Perfil Centro de padres”** (marcas “Perfil activado”; puedes corregir el nombre del colegio ahí). Solo tú puedes activarlo y desactivarlo.
-4. Cada tesorero entra a **Accesos y QR → Centro de padres**, genera el código `AUD-…` y se lo entrega al centro.
-5. El centro entra a `/centro`, pega el código en **Agregar curso** y ve ese curso (resumen, libro contable, gastos con boleta; Excel y PDF). Solo acepta cursos de **su** colegio. Si el tesorero genera un código nuevo o lo desactiva, el acceso se corta.
+## Perfil Centro de padres (auditoría de cursos por código)
+1. Antes de publicar la versión nueva, pega **`supabase-actualizacion-5.sql`** en Supabase → SQL Editor → Run (también asigna un código a cada curso que ya existe).
+2. Cada curso tiene un **código de auditoría `AUD-…` fijo**, creado junto con el curso. El tesorero lo ve en *Accesos y QR → Centro de padres* y solo puede **entregarlo**; no puede cambiarlo ni quitar el acceso.
+3. El centro de padres crea su cuenta en `/register` eligiendo **“Soy del centro de padres”**. Queda *pendiente* hasta que tú lo actives en **Administración → Usuarios → “Perfil Centro de padres”**.
+4. El centro entra a `/centro`, pega el código en **Agregar curso** y el curso queda en su vista (resumen, libro contable con Excel y PDF, gastos con boleta; alumnos abreviados). No se valida el colegio: responde el tesorero que entrega el código.
+5. **Solo tú** puedes quitar el acceso de un centro o **restablecer el código** de un curso, en **Administración → Cursos → “Centro de padres”**. Al restablecerlo, todos los centros de ese curso pierden el acceso y el tesorero ve el código nuevo.

@@ -22,12 +22,11 @@ export async function register(_: FormState, fd: FormData): Promise<FormState> {
   const parsed = registerSchema.safeParse(Object.fromEntries(fd));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
   const { name, email, password, accountType, centerSchool } = parsed.data;
-  if (accountType === "centro" && (centerSchool ?? "").length < 3) return { error: "Escribe el nombre del colegio de tu centro de padres" };
   const [exists] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.email, email)).limit(1);
   if (exists) return { error: "Ese correo ya está registrado. Inicia sesión." };
   const [u] = await db.insert(schema.users).values({
     name, email, passwordHash: await hashPassword(password),
-    accountType, centerSchool: accountType === "centro" ? centerSchool : null, // el centro queda pendiente hasta que el administrador lo active
+    accountType, centerSchool: accountType === "centro" ? (centerSchool || null) : null, // el centro queda pendiente hasta que el administrador lo active
   }).returning();
   await createSession(u.id);
   redirect(accountType === "centro" ? "/centro" : "/app");

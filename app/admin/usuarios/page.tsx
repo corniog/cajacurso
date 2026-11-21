@@ -80,13 +80,13 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/usua
                 <details open={u.accountType === "centro" && !u.centerEnabled}>
                   <summary className="cursor-pointer text-sm font-semibold text-brand">Perfil Centro de padres 🏛️</summary>
                   <div className="mt-3 rounded-xl bg-bg p-4">
-                    <p className="mb-3 text-xs text-muted">Un centro de padres entra a /centro, agrega cursos con el código de auditoría que le da cada tesorero y ve solo los cursos de SU colegio: resumen, libro contable y gastos con boleta (alumnos abreviados), con descarga en Excel y PDF. Solo tú lo activas.</p>
+                    <p className="mb-3 text-xs text-muted">Un centro de padres entra a /centro, agrega cada curso con su código de auditoría (el que se crea con el curso y entrega el tesorero) y ve resumen, libro contable y gastos con boleta (alumnos abreviados), con descarga en Excel y PDF. No se valida el colegio: responde el tesorero que entrega el código. Solo tú activas el perfil y puedes quitar accesos (en Cursos → Centro de padres).</p>
                     <ActionForm action={setCenterProfile.bind(null, u.id)} submit="Guardar perfil" resetOnSuccess={false}>
                       <div className="grid gap-3 sm:grid-cols-3">
                         <label className="block"><span className="label">Tipo de cuenta</span>
                           <select name="accountType" defaultValue={u.accountType} className="input"><option value="tesorero">Tesorero (normal)</option><option value="centro">Centro de padres</option></select></label>
-                        <label className="block sm:col-span-2"><span className="label">Colegio que puede auditar</span>
-                          <input name="centerSchool" defaultValue={u.centerSchool ?? ""} className="input" maxLength={120} placeholder="Igual que en los cursos, ej: Colegio San Andrés" /></label>
+                        <label className="block sm:col-span-2"><span className="label">Colegio o centro (solo como referencia, opcional)</span>
+                          <input name="centerSchool" defaultValue={u.centerSchool ?? ""} className="input" maxLength={120} placeholder="Ej: Centro de padres Colegio San Andrés" /></label>
                       </div>
                       <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" name="centerEnabled" defaultChecked={u.centerEnabled} /> <b>Perfil activado</b> (si no, el centro ve “pendiente de activación”)</label>
                     </ActionForm>

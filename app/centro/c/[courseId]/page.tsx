@@ -23,7 +23,7 @@ export default async function CenterCoursePage({ params }: { params: Promise<{ c
 
   return (
     <div className="space-y-6">
-      <div className="no-print"><Link href="/centro" className="text-sm text-muted">← Cursos de {user.centerSchool}</Link></div>
+      <div className="no-print"><Link href="/centro" className="text-sm text-muted">← Mis cursos</Link></div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{course.name} · {course.year}</h1>
