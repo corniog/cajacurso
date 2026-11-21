@@ -52,27 +52,44 @@ export default function KpiDashboard({ course, k, s }: { course: Course; k: Retu
           <p className="text-sm text-muted">Qué se ha cobrado y qué falta, solo con pagos reales.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="card">
-            <p className="font-semibold text-muted">Hasta {mName} {course.year}</p>
-            <p className="mt-2 text-4xl font-bold">{pct(k.toDate.pct)}</p>
-            <Progress value={k.toDate.pct} color={C.green} />
-            <p className="mt-2 text-sm text-muted">{clp(k.toDate.collected)} de {clp(k.toDate.expected)}</p>
-          </div>
-          <div className="card">
-            <p className="font-semibold text-muted">Faltante hasta {mName}</p>
-            <p className={`mt-2 text-4xl font-bold ${k.toDate.missing > 0 ? "text-red-700" : "text-emerald-700"}`}>{clp(k.toDate.missing)}</p>
-            <p className="mt-2 text-sm text-muted">{pct(100 - k.toDate.pct)} pendiente a la fecha</p>
-          </div>
+          {k.started ? (
+            <>
+              <div className="card">
+                <p className="font-semibold text-muted">Hasta {mName} {course.year}</p>
+                <p className="mt-2 text-4xl font-bold">{pct(k.toDate.pct)}</p>
+                <Progress value={k.toDate.pct} color={C.green} />
+                <p className="mt-2 text-sm text-muted">{clp(k.toDate.collected)} de {clp(k.toDate.expected)} que ya se debían pagar</p>
+              </div>
+              <div className="card">
+                <p className="font-semibold text-muted">Faltante hasta {mName}</p>
+                <p className={`mt-2 text-4xl font-bold ${k.toDate.missing > 0 ? "text-red-700" : "text-emerald-700"}`}>{clp(k.toDate.missing)}</p>
+                <p className="mt-2 text-sm text-muted">{k.toDate.expected > 0 ? `${pct(100 - k.toDate.pct)} de lo vencido sigue sin pagarse` : "Nada vencido todavía"}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="card">
+                <p className="font-semibold text-muted">Cobro de cuotas</p>
+                <p className="mt-2 text-3xl font-bold">Parte en {MONTH_NAMES[k.firstMonth - 1]} {course.year}</p>
+                <p className="mt-2 text-sm text-muted">Hasta entonces no hay cuotas vencidas, por eso el avance “a la fecha” aún no se calcula.</p>
+              </div>
+              <div className="card">
+                <p className="font-semibold text-muted">Pagado por adelantado</p>
+                <p className="mt-2 text-4xl font-bold text-emerald-700">{clp(s.collected)}</p>
+                <p className="mt-2 text-sm text-muted">Cuotas que ya se pagaron antes de que comience el cobro</p>
+              </div>
+            </>
+          )}
           <div className="card">
             <p className="font-semibold text-muted">Año completo</p>
             <p className="mt-2 text-4xl font-bold">{pct(k.year.pct)}</p>
             <Progress value={k.year.pct} color={C.gold} />
-            <p className="mt-2 text-sm text-muted">{clp(k.year.collected)} de {clp(k.year.expected)}</p>
+            <p className="mt-2 text-sm text-muted">{clp(k.year.collected)} de {clp(k.year.expected)} que se cobrarán en todo el año</p>
           </div>
           <div className="card">
-            <p className="font-semibold text-muted">Saldo de cuotas por recaudar</p>
+            <p className="font-semibold text-muted">Cuotas por recaudar en el año</p>
             <p className="mt-2 text-4xl font-bold">{clp(k.year.missing)}</p>
-            <p className="mt-2 text-sm text-muted">Compromisos anuales pendientes</p>
+            <p className="mt-2 text-sm text-muted">Lo que falta para completar todas las cuotas del año</p>
           </div>
         </div>
       </section>
@@ -84,9 +101,9 @@ export default function KpiDashboard({ course, k, s }: { course: Course; k: Retu
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <div className="card">
-            <h3 className="font-bold">Cumplimiento hasta {mName} {course.year}</h3>
+            <h3 className="font-bold">{k.started ? `Cumplimiento hasta ${mName} ${course.year}` : `Cumplimiento del año ${course.year}`}</h3>
             <p className="mb-2 text-sm text-muted">Pagos acumulados vs saldo</p>
-            <Donut label="Cumplimiento a la fecha" parts={[{ value: k.toDate.collected, color: C.green, name: "Pagos realizados" }, { value: k.toDate.missing, color: C.gold, name: "Saldo pendiente" }]} />
+            <Donut label="Cumplimiento" parts={k.started ? [{ value: k.toDate.collected, color: C.green, name: "Pagos realizados" }, { value: k.toDate.missing, color: C.gold, name: "Saldo pendiente" }] : [{ value: k.year.collected, color: C.green, name: "Pagos realizados" }, { value: k.year.missing, color: C.gold, name: "Saldo pendiente" }]} />
             <p className="mt-2 flex justify-center gap-4 text-xs text-muted">
               <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm" style={{ background: C.green }} />Pagos realizados</span>
               <span><i className="mr-1 inline-block h-2.5 w-2.5 rounded-sm" style={{ background: C.gold }} />Saldo pendiente</span>

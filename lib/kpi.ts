@@ -21,6 +21,8 @@ export function buildKpis(course: Course, rows: StudentRow[], s: Summary, expens
 
   return {
     cur,
+    started: upTo.length > 0, // false mientras no llega el primer mes de cobro (p. ej. curso 2027 visto en 2026)
+    firstMonth: course.months[0],
     curMonth: upTo.length ? upTo[upTo.length - 1] : course.months[0],
     activeStudents: rows.filter((r) => r.student.active).length,
     toDate: { expected: expectedTo, collected: collectedTo, pct: pct(collectedTo, expectedTo), missing: Math.max(0, expectedTo - collectedTo) },
