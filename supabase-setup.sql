@@ -201,7 +201,6 @@ CREATE TABLE "events" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 ALTER TABLE "courses" ADD COLUMN "features" jsonb DEFAULT '{}'::jsonb NOT NULL;
-ALTER TABLE "courses" ADD COLUMN "owner_features" jsonb DEFAULT '{}'::jsonb NOT NULL;
 ALTER TABLE "event_docs" ADD CONSTRAINT "event_docs_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "event_docs" ADD CONSTRAINT "event_docs_event_id_events_id_fk" FOREIGN KEY ("event_id") REFERENCES "public"."events"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "event_lines" ADD CONSTRAINT "event_lines_doc_id_event_docs_id_fk" FOREIGN KEY ("doc_id") REFERENCES "public"."event_docs"("id") ON DELETE cascade ON UPDATE no action;
@@ -287,11 +286,31 @@ CREATE TABLE "support_requests" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 ALTER TABLE "users" ADD COLUMN "disabled" boolean DEFAULT false NOT NULL;
-ALTER TABLE "users" ADD COLUMN "features" jsonb DEFAULT '{}'::jsonb NOT NULL;
 ALTER TABLE "support_requests" ADD CONSTRAINT "support_requests_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "support_requests" ADD CONSTRAINT "support_requests_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
 CREATE INDEX "support_status_idx" ON "support_requests" USING btree ("status");
 CREATE INDEX "support_user_idx" ON "support_requests" USING btree ("user_id");
+
+-- 0009_funciones_usuario
+ALTER TABLE "users" ADD COLUMN "features" jsonb DEFAULT '{}'::jsonb NOT NULL;
+ALTER TABLE "courses" ADD COLUMN "owner_features" jsonb DEFAULT '{}'::jsonb NOT NULL;
+
+-- 0010_centro_de_padres
+CREATE TABLE "center_links" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"center_id" uuid NOT NULL,
+	"course_id" uuid NOT NULL,
+	"code" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+ALTER TABLE "courses" ADD COLUMN "audit_code" text;
+ALTER TABLE "users" ADD COLUMN "account_type" text DEFAULT 'tesorero' NOT NULL;
+ALTER TABLE "users" ADD COLUMN "center_enabled" boolean DEFAULT false NOT NULL;
+ALTER TABLE "users" ADD COLUMN "center_school" text;
+ALTER TABLE "center_links" ADD CONSTRAINT "center_links_center_id_users_id_fk" FOREIGN KEY ("center_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "center_links" ADD CONSTRAINT "center_links_course_id_courses_id_fk" FOREIGN KEY ("course_id") REFERENCES "public"."courses"("id") ON DELETE cascade ON UPDATE no action;
+CREATE UNIQUE INDEX "center_links_unique" ON "center_links" USING btree ("center_id","course_id");
+ALTER TABLE "courses" ADD CONSTRAINT "courses_audit_code_unique" UNIQUE("audit_code");
 
 -- Seguridad: el acceso a las tablas es solo desde la aplicación (rol postgres, que ignora RLS).
 -- Al activar RLS sin políticas, nadie puede leerlas por la API pública de Supabase.
@@ -314,6 +333,7 @@ ALTER TABLE "ledger_audit" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "contribution_payments" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "contributions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "support_requests" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "center_links" ENABLE ROW LEVEL SECURITY;
 
 -- Bucket PRIVADO para las fotos de boletas
 DO $$

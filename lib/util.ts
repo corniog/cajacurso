@@ -50,3 +50,14 @@ export function whatsappLink(phone: string | null | undefined, text: string): st
   if (d.length < 10) return null;
   return `https://wa.me/${d}?text=${encodeURIComponent(text)}`;
 }
+
+/** Código para que un Centro de padres agregue el curso a su vista de auditoría: AUD-XXXXXXXXXXXX */
+export const newAuditCode = () => `AUD-${longCode()}`;
+export const AUDIT_CODE_RE = /^AUD-[A-Z2-9]{12}$/;
+
+/** "Soto, Matías" → "Matías S." (el Centro de padres audita las cuentas, no necesita ver los apellidos). */
+export function maskName(full: string): string {
+  const [last, first] = full.split(",").map((x) => x.trim());
+  if (!first) return full;
+  return `${first.split(/\s+/)[0]} ${last.charAt(0).toUpperCase()}.`;
+}

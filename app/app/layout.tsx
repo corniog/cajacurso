@@ -3,11 +3,13 @@ import { requireUser } from "@/lib/auth";
 import { logout } from "@/app/actions/auth";
 import { isAdminEmail } from "@/lib/admin";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function PanelLayout({ children }: LayoutProps<"/app">) {
   const user = await requireUser();
+  if (user.accountType === "centro") redirect("/centro");
   return (
     <div className="flex min-h-screen flex-col">
       <header className="no-print border-b border-line bg-white">

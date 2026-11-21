@@ -1,14 +1,35 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { login, register } from "@/app/actions/auth";
 
 export default function AuthForm({ mode }: { mode: "login" | "register" }) {
   const [state, action, pending] = useActionState(mode === "login" ? login : register, undefined);
   const isLogin = mode === "login";
+  const [tipo, setTipo] = useState<"tesorero" | "centro">("tesorero");
   return (
     <form action={action} className="card space-y-4">
       <h1 className="text-xl font-bold">{isLogin ? "Iniciar sesión" : "Crea tu cuenta gratis"}</h1>
+      {!isLogin && (
+        <fieldset className="space-y-2">
+          <legend className="label">¿Qué tipo de cuenta necesitas?</legend>
+          <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-soft">
+            <input type="radio" name="accountType" value="tesorero" checked={tipo === "tesorero"} onChange={() => setTipo("tesorero")} className="mt-1" />
+            <span><b>Soy tesorero de un curso</b><br /><span className="text-muted">Llevo las cuotas, gastos y reportes.</span></span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-soft">
+            <input type="radio" name="accountType" value="centro" checked={tipo === "centro"} onChange={() => setTipo("centro")} className="mt-1" />
+            <span><b>Soy del centro de padres</b><br /><span className="text-muted">Quiero auditar los cursos de mi colegio. El administrador debe activar tu perfil.</span></span>
+          </label>
+        </fieldset>
+      )}
+      {!isLogin && tipo === "centro" && (
+        <div>
+          <label className="label" htmlFor="centerSchool">Colegio de tu centro de padres</label>
+          <input id="centerSchool" name="centerSchool" className="input" placeholder="Ej: Colegio San Andrés" required minLength={3} />
+          <p className="mt-1 text-xs text-muted">Escríbelo igual que lo escriben los tesoreros en sus cursos; solo podrás ver cursos de este colegio.</p>
+        </div>
+      )}
       {!isLogin && (
         <div>
           <label className="label" htmlFor="name">Tu nombre</label>

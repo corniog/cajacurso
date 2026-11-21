@@ -143,3 +143,11 @@ Avisos normales: Windows mostrará "editor desconocido" y Android pedirá permit
 | "Unable to connect" tras días sin uso | Supabase pausó el proyecto → Restore |
 
 Ante cualquier error, copia el mensaje (en Vercel: *Deployments → View logs*) y envíaselo a Claude.
+
+
+## Perfil Centro de padres (auditoría de un colegio)
+1. Antes de publicar la versión nueva, pega **`supabase-actualizacion-5.sql`** en Supabase → SQL Editor → Run.
+2. El centro de padres crea su cuenta en `/register` eligiendo **“Soy del centro de padres”** y escribiendo el colegio. Queda *pendiente*.
+3. Tú lo activas en **Administración → Usuarios → “Perfil Centro de padres”** (marcas “Perfil activado”; puedes corregir el nombre del colegio ahí). Solo tú puedes activarlo y desactivarlo.
+4. Cada tesorero entra a **Accesos y QR → Centro de padres**, genera el código `AUD-…` y se lo entrega al centro.
+5. El centro entra a `/centro`, pega el código en **Agregar curso** y ve ese curso (resumen, libro contable, gastos con boleta; Excel y PDF). Solo acepta cursos de **su** colegio. Si el tesorero genera un código nuevo o lo desactiva, el acceso se corta.

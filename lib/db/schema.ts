@@ -12,6 +12,9 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   disabled: boolean("disabled").notNull().default(false), // cuenta suspendida por el administrador
   features: jsonb("features").$type<Record<string, boolean>>().notNull().default({}), // funciones activadas/bloqueadas para TODOS sus cursos
+  accountType: text("account_type").$type<"tesorero" | "centro">().notNull().default("tesorero"), // "centro" = perfil Centro de padres
+  centerEnabled: boolean("center_enabled").notNull().default(false), // el administrador debe activar el perfil Centro de padres
+  centerSchool: text("center_school"), // colegio al que pertenece el centro de padres (solo puede auditar cursos de ese colegio)
   createdAt: createdAt(),
 });
 
@@ -32,6 +35,7 @@ export const courses = pgTable("courses", {
   publicStudents: boolean("public_students").notNull().default(true), // lista abreviada en la vista por código
   publicExpenses: boolean("public_expenses").notNull().default(true), // gastos y boletas visibles para apoderados
   transferInfo: text("transfer_info"), // datos bancarios para que los apoderados transfieran aportes
+  auditCode: text("audit_code").unique(), // código para que el Centro de padres agregue el curso a su vista (null = desactivado)
   directiveCode: text("directive_code").unique(), // acceso de solo lectura para directivos (null = desactivado)
   createdAt: createdAt(),
 }, (t) => [index("courses_owner_idx").on(t.ownerId)]);
@@ -278,3 +282,12 @@ export type LedgerAudit = typeof ledgerAudit.$inferSelect;
 export type Contribution = typeof contributions.$inferSelect;
 export type ContributionPayment = typeof contributionPayments.$inferSelect;
 export type SupportRequest = typeof supportRequests.$inferSelect;
+
+/** Cursos que un Centro de padres tiene agregados a su vista. Vale solo mientras `code` siga igual a courses.audit_code. */
+export const centerLinks = pgTable("center_links", {
+  id: id(),
+  centerId: uuid("center_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  courseId: uuid("course_id").notNull().references(() => courses.id, { onDelete: "cascade" }),
+  code: text("code").notNull(),
+  createdAt: createdAt(),
+}, (t) => [uniqueIndex("center_links_unique").on(t.centerId, t.courseId)]);

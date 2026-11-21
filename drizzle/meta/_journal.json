@@ -71,6 +71,13 @@
       "when": 1794997403883,
       "tag": "0009_funciones_usuario",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795224124555,
+      "tag": "0010_centro_de_padres",
+      "breakpoints": true
     }
   ]
 }

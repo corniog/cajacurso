@@ -233,3 +233,25 @@ export async function setUserFeatures(userId: string, _: ActionState, fd: FormDa
     return { ok: `Funciones del usuario guardadas (${on} activadas, ${off} desactivadas) para todos sus cursos` };
   } catch (e) { return fail(e); }
 }
+
+/** Perfil Centro de padres: tipo de cuenta, colegio que puede auditar y activación (solo el administrador la decide). */
+export async function setCenterProfile(userId: string, _: ActionState, fd: FormData): Promise<ActionState> {
+  try {
+    await requireAdmin();
+    const u = await getUserRow(userId);
+    if (adminEmails().includes(u.email.toLowerCase())) throw new Error("No aplica a administradores");
+    const d = z.object({
+      accountType: z.enum(["tesorero", "centro"]),
+      centerSchool: z.string().trim().max(120).optional().transform((v) => v || null),
+      centerEnabled: z.string().optional(),
+    }).parse(Object.fromEntries(fd));
+    if (d.accountType === "centro" && !d.centerSchool) throw new Error("Indica el colegio que podrá auditar este centro de padres");
+    await db.update(schema.users).set({
+      accountType: d.accountType, centerSchool: d.accountType === "centro" ? d.centerSchool : null,
+      centerEnabled: d.accountType === "centro" && d.centerEnabled === "on",
+    }).where(eq(schema.users.id, u.id));
+    refresh();
+    return { ok: d.accountType === "centro"
+      ? (d.centerEnabled === "on" ? `Perfil Centro de padres ACTIVADO para ${d.centerSchool}` : "Perfil Centro de padres guardado, sin activar") : "Cuenta de tesorero" };
+  } catch (e) { return fail(e); }
+}

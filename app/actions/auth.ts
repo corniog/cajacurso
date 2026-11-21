@@ -14,17 +14,23 @@ const registerSchema = z.object({
   name: z.string().trim().min(2, "Escribe tu nombre").max(80),
   email: z.string().trim().toLowerCase().email("Correo no válido"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres").max(100),
+  accountType: z.enum(["tesorero", "centro"]).default("tesorero"),
+  centerSchool: z.string().trim().max(120).optional(),
 });
 
 export async function register(_: FormState, fd: FormData): Promise<FormState> {
   const parsed = registerSchema.safeParse(Object.fromEntries(fd));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const { name, email, password } = parsed.data;
+  const { name, email, password, accountType, centerSchool } = parsed.data;
+  if (accountType === "centro" && (centerSchool ?? "").length < 3) return { error: "Escribe el nombre del colegio de tu centro de padres" };
   const [exists] = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.email, email)).limit(1);
   if (exists) return { error: "Ese correo ya está registrado. Inicia sesión." };
-  const [u] = await db.insert(schema.users).values({ name, email, passwordHash: await hashPassword(password) }).returning();
+  const [u] = await db.insert(schema.users).values({
+    name, email, passwordHash: await hashPassword(password),
+    accountType, centerSchool: accountType === "centro" ? centerSchool : null, // el centro queda pendiente hasta que el administrador lo active
+  }).returning();
   await createSession(u.id);
-  redirect("/app");
+  redirect(accountType === "centro" ? "/centro" : "/app");
 }
 
 export async function login(_: FormState, fd: FormData): Promise<FormState> {
@@ -43,7 +49,7 @@ export async function login(_: FormState, fd: FormData): Promise<FormState> {
   if (u.disabled) return { error: "Tu cuenta está suspendida. Escribe al administrador de CajaCurso para reactivarla." };
   await clearLoginFailures(key);
   await createSession(u.id);
-  redirect("/app");
+  redirect(u.accountType === "centro" ? "/centro" : "/app");
 }
 
 export async function logout() {
