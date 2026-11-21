@@ -40,7 +40,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/usua
             <li key={u.id} className="card space-y-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
-                  <p className="font-bold">{u.name} {admin && <span className="badge ml-1 bg-purple-100 text-purple-800">Administrador</span>} {u.disabled && <span className="badge ml-1 bg-red-100 text-red-800">Suspendido</span>} {u.accountType === "centro" && (u.centerEnabled ? <span className="badge ml-1 bg-blue-100 text-blue-800">Centro de padres · activo</span> : <span className="badge ml-1 bg-amber-100 text-amber-900">⏳ Centro de padres · pendiente de activar</span>)}</p>
+                  <p className="font-bold">{u.name} {admin && <span className="badge ml-1 bg-purple-100 text-purple-800">Administrador</span>} {u.disabled && <span className="badge ml-1 bg-red-100 text-red-800">Suspendido</span>} {u.accountType === "centro" && (u.centerEnabled ? <span className="badge ml-1 bg-blue-100 text-blue-800">Centro de padres · activo</span> : <span className="badge ml-1 bg-amber-100 text-amber-900">⛔ Centro de padres · desactivado</span>)}</p>
                   <p className="text-sm text-muted">{u.email} · registrado el {u.createdAt.toLocaleDateString("es-CL")}</p>
                 </div>
                 <p className="text-sm text-muted">{mine.length} curso(s)</p>
@@ -77,10 +77,10 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/usua
                 </div>
               </details>
               {!admin && (
-                <details open={u.accountType === "centro" && !u.centerEnabled}>
+                <details>
                   <summary className="cursor-pointer text-sm font-semibold text-brand">Perfil Centro de padres 🏛️</summary>
                   <div className="mt-3 rounded-xl bg-bg p-4">
-                    <p className="mb-3 text-xs text-muted">Un centro de padres entra a /centro, agrega cada curso con su código de auditoría (el que se crea con el curso y entrega el tesorero) y ve resumen, libro contable y gastos con boleta (alumnos abreviados), con descarga en Excel y PDF. No se valida el colegio: responde el tesorero que entrega el código. Solo tú activas el perfil y puedes quitar accesos (en Cursos → Centro de padres).</p>
+                    <p className="mb-3 text-xs text-muted">Un centro de padres entra a /centro, agrega cada curso con su código de auditoría (el que se crea con el curso y entrega el tesorero) y ve resumen, libro contable y gastos con boleta (alumnos abreviados), con descarga en Excel y PDF. No se valida el colegio: responde el tesorero que entrega el código. Los centros quedan activos al registrarse; tú puedes desactivar el perfil y quitar accesos (en Cursos → Centro de padres).</p>
                     <ActionForm action={setCenterProfile.bind(null, u.id)} submit="Guardar perfil" resetOnSuccess={false}>
                       <div className="grid gap-3 sm:grid-cols-3">
                         <label className="block"><span className="label">Tipo de cuenta</span>
@@ -88,7 +88,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/admin/usua
                         <label className="block sm:col-span-2"><span className="label">Colegio o centro (solo como referencia, opcional)</span>
                           <input name="centerSchool" defaultValue={u.centerSchool ?? ""} className="input" maxLength={120} placeholder="Ej: Centro de padres Colegio San Andrés" /></label>
                       </div>
-                      <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" name="centerEnabled" defaultChecked={u.centerEnabled} /> <b>Perfil activado</b> (si no, el centro ve “pendiente de activación”)</label>
+                      <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" name="centerEnabled" defaultChecked={u.centerEnabled} /> <b>Perfil activado</b> (si lo desmarcas, el centro no puede ver ni agregar cursos)</label>
                     </ActionForm>
                   </div>
                 </details>

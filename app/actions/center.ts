@@ -13,7 +13,7 @@ const fail = (e: unknown): ActionState => ({ error: e instanceof Error ? e.messa
 export async function linkCourseByCode(_: ActionState, fd: FormData): Promise<ActionState> {
   try {
     const user = await requireCenter();
-    if (!user.centerEnabled) throw new Error("Tu perfil aún no está activado por el administrador");
+    if (!user.centerEnabled) throw new Error("Tu perfil está desactivado por el administrador");
     const code = String(fd.get("code") ?? "").trim().toUpperCase();
     if (!AUDIT_CODE_RE.test(code)) throw new Error("El código no es válido. Debe verse así: AUD-XXXXXXXXXXXX");
     const [course] = await db.select().from(schema.courses).where(eq(schema.courses.auditCode, code)).limit(1);

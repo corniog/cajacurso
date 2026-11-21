@@ -26,7 +26,8 @@ export async function register(_: FormState, fd: FormData): Promise<FormState> {
   if (exists) return { error: "Ese correo ya está registrado. Inicia sesión." };
   const [u] = await db.insert(schema.users).values({
     name, email, passwordHash: await hashPassword(password),
-    accountType, centerSchool: accountType === "centro" ? (centerSchool || null) : null, // el centro queda pendiente hasta que el administrador lo active
+    accountType, centerSchool: accountType === "centro" ? (centerSchool || null) : null,
+    centerEnabled: accountType === "centro", // queda activo al registrarse; el administrador puede desactivarlo
   }).returning();
   await createSession(u.id);
   redirect(accountType === "centro" ? "/centro" : "/app");

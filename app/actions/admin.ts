@@ -252,7 +252,7 @@ export async function setCenterProfile(userId: string, _: ActionState, fd: FormD
     }).where(eq(schema.users.id, u.id));
     refresh();
     return { ok: d.accountType === "centro"
-      ? (d.centerEnabled === "on" ? "Perfil Centro de padres ACTIVADO" : "Perfil Centro de padres guardado, sin activar") : "Cuenta de tesorero" };
+      ? (d.centerEnabled === "on" ? "Perfil Centro de padres ACTIVADO" : "Perfil Centro de padres guardado, desactivado") : "Cuenta de tesorero" };
   } catch (e) { return fail(e); }
 }
 

@@ -19,7 +19,7 @@ export default function AuthForm({ mode }: { mode: "login" | "register" }) {
           </label>
           <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-line p-3 text-sm has-[:checked]:border-brand has-[:checked]:bg-brand-soft">
             <input type="radio" name="accountType" value="centro" checked={tipo === "centro"} onChange={() => setTipo("centro")} className="mt-1" />
-            <span><b>Soy del centro de padres</b><br /><span className="text-muted">Quiero auditar los cursos de mi colegio con el código que me entregue cada tesorero. El administrador debe activar tu perfil.</span></span>
+            <span><b>Soy del centro de padres</b><br /><span className="text-muted">Quiero auditar los cursos de mi colegio con el código que me entregue cada tesorero.</span></span>
           </label>
         </fieldset>
       )}

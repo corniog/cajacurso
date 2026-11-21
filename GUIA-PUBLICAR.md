@@ -148,6 +148,6 @@ Ante cualquier error, copia el mensaje (en Vercel: *Deployments → View logs*) 
 ## Perfil Centro de padres (auditoría de cursos por código)
 1. Antes de publicar la versión nueva, pega **`supabase-actualizacion-5.sql`** en Supabase → SQL Editor → Run (también asigna un código a cada curso que ya existe).
 2. Cada curso tiene un **código de auditoría `AUD-…` fijo**, creado junto con el curso. El tesorero lo ve en *Accesos y QR → Centro de padres* y solo puede **entregarlo**; no puede cambiarlo ni quitar el acceso.
-3. El centro de padres crea su cuenta en `/register` eligiendo **“Soy del centro de padres”**. Queda *pendiente* hasta que tú lo actives en **Administración → Usuarios → “Perfil Centro de padres”**.
+3. El centro de padres crea su cuenta en `/register` eligiendo **“Soy del centro de padres”**. Queda **activo al registrarse**; tú puedes desactivarlo o reactivarlo en **Administración → Usuarios → “Perfil Centro de padres”**.
 4. El centro entra a `/centro`, pega el código en **Agregar curso** y el curso queda en su vista (resumen, libro contable con Excel y PDF, gastos con boleta; alumnos abreviados). No se valida el colegio: responde el tesorero que entrega el código.
 5. **Solo tú** puedes quitar el acceso de un centro o **restablecer el código** de un curso, en **Administración → Cursos → “Centro de padres”**. Al restablecerlo, todos los centros de ese curso pierden el acceso y el tesorero ve el código nuevo.

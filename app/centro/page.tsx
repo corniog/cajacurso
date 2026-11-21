@@ -13,8 +13,8 @@ export default async function CenterHome() {
     return (
       <div className="card mx-auto max-w-xl space-y-3 text-center">
         <p className="text-4xl">⏳</p>
-        <h1 className="text-xl font-bold">Tu perfil está pendiente de activación</h1>
-        <p className="text-muted">Creaste una cuenta de centro de padres{user.centerSchool ? <> (<b>{user.centerSchool}</b>)</> : null}. El administrador de CajaCurso debe activarla antes de que puedas agregar cursos. Vuelve a entrar en un momento; no necesitas hacer nada más.</p>
+        <h1 className="text-xl font-bold">Tu perfil está desactivado</h1>
+        <p className="text-muted">Creaste una cuenta de centro de padres{user.centerSchool ? <> (<b>{user.centerSchool}</b>)</> : null}. El administrador de CajaCurso la tiene desactivada por ahora, por eso no puedes ver ni agregar cursos. Si crees que es un error, escríbele.</p>
       </div>
     );
   }

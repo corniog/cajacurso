@@ -36,16 +36,10 @@ try {
   const B = await pg(); await register(B, "Tesorero Otro", `b.${ts}@prueba.cl`, "tesorero"); const idB = await mkCourse(B, `Otro Colegio ${ts}`, "6° B"); const codeB = await getCode(B, idB);
   // Centro: queda pendiente
   const emailC = `c.${ts}@prueba.cl`; const C = await pg(); await register(C, "Centro Norte", emailC, "centro", "");
-  ck("Centro nuevo ve 'pendiente de activación'", await C.getByText("pendiente de activación").count() > 0);
-  ck("Sin activar no hay formulario para agregar cursos", await C.getByRole("button", { name: "Agregar curso" }).count() === 0);
+  ck("Centro nuevo queda ACTIVO al registrarse (puede agregar cursos)", await C.getByRole("button", { name: "Agregar curso" }).count() > 0);
   ck("Centro no entra al panel de tesorero (/app → /centro)", (await C.goto(`${BASE}/app`), /\/centro$/.test(C.url())));
   ck("Tesorero no entra a /centro (→ /app)", (await A.goto(`${BASE}/centro`), /\/app$/.test(A.url())));
-  // Admin activa
   const ad = await pg(); await ad.goto(`${BASE}/login`); await ad.fill("#email", ADMIN); await ad.fill("#password", PASS); await ad.getByRole("button", { name: /Entrar|Ingresar/ }).click(); await ad.waitForURL(/\/app$/);
-  await ad.goto(`${BASE}/admin/usuarios?q=${encodeURIComponent(emailC)}`);
-  const li = ad.locator("li", { hasText: emailC });
-  ck("Admin ve el centro como pendiente", await li.getByText(/pendiente de activar/).count() > 0);
-  await li.getByLabel(/Perfil activado/).check(); await li.getByRole("button", { name: "Guardar perfil" }).click(); await li.getByText(/Centro de padres · activo/).waitFor();
   // Centro agrega cursos
   await C.goto(`${BASE}/centro`);
   await C.fill("#audit-code", "AUD-NOEXISTE123"); await C.getByRole("button", { name: "Agregar curso" }).click();
@@ -86,7 +80,7 @@ try {
   const r4 = await C.goto(urlA); ck("Admin quita el acceso de un centro y ya no ve el curso (404)", r4.status() === 404);
   // Admin desactiva el perfil → pendiente
   await ad.goto(`${BASE}/admin/usuarios?q=${encodeURIComponent(emailC)}`);
-  const li2 = ad.locator("li", { hasText: emailC }); await li2.locator("summary", { hasText: "Perfil Centro de padres" }).click(); await li2.getByLabel(/Perfil activado/).uncheck(); await li2.getByRole("button", { name: "Guardar perfil" }).click(); await li2.getByText(/pendiente de activar/).waitFor();
-  await C.goto(`${BASE}/centro`); ck("Admin desactiva el perfil y vuelve a 'pendiente'", await C.getByText("pendiente de activación").count() > 0);
+  const li2 = ad.locator("li", { hasText: emailC }); await li2.locator("summary", { hasText: "Perfil Centro de padres" }).click(); await li2.getByLabel(/Perfil activado/).uncheck(); await li2.getByRole("button", { name: "Guardar perfil" }).click(); await li2.getByText(/desactivado/).first().waitFor();
+  await C.goto(`${BASE}/centro`); ck("Admin desactiva el perfil: el centro ya no puede agregar cursos", await C.getByText("Tu perfil está desactivado").count() > 0 && await C.getByRole("button", { name: "Agregar curso" }).count() === 0);
 } catch (e) { ck("Ejecución sin errores", false, String(e.message).split("\n")[0]); }
 await b.close(); process.exit(res.every(Boolean) ? 0 : 1);
