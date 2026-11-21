@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@googleapis/drive": "^27.1.0",
+    "aws4fetch": "^1.0.20",
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.4",
     "exceljs": "^4.4.0",

@@ -138,7 +138,7 @@ Avisos normales: Windows mostrará "editor desconocido" y Android pedirá permit
 |---|---|
 | Error al registrarse / página 500 | No se ejecutó `supabase-setup.sql`, o `DATABASE_URL` está mal (contraseña con símbolos raros, o falta el puerto 6543) |
 | No aparece "Administración" | `ADMIN_EMAILS` no coincide exactamente con tu correo, o falta Redeploy |
-| La boleta no se sube | Revisa `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` y que exista el bucket `boletas` |
+| La boleta no se sube | Revisa `R2_*` (si usas Cloudflare R2) o `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` y que exista el bucket `boletas` |
 | Los QR/enlaces apuntan a localhost | `APP_URL` mal configurada o falta Redeploy |
 | "Unable to connect" tras días sin uso | Supabase pausó el proyecto → Restore |
 
@@ -151,3 +151,12 @@ Ante cualquier error, copia el mensaje (en Vercel: *Deployments → View logs*) 
 3. El centro de padres crea su cuenta en `/register` eligiendo **“Soy del centro de padres”**. Queda **activo al registrarse**; tú puedes desactivarlo o reactivarlo en **Administración → Usuarios → “Perfil Centro de padres”**.
 4. El centro entra a `/centro`, pega el código en **Agregar curso** y el curso queda en su vista (resumen, libro contable con Excel y PDF, gastos con boleta; alumnos abreviados). No se valida el colegio: responde el tesorero que entrega el código.
 5. **Solo tú** puedes quitar el acceso de un centro o **restablecer el código** de un curso, en **Administración → Cursos → “Centro de padres”**. Al restablecerlo, todos los centros de ese curso pierden el acceso y el tesorero ve el código nuevo.
+
+
+## Más espacio para boletas: Cloudflare R2 (opcional, 10 GB gratis)
+Supabase gratis da 1 GB de archivos. Con Cloudflare R2 tienes **10 GB gratis** y sin cobro por descargas (pasado el límite: ~US$0,015 por GB al mes). Las boletas que ya están en Supabase **siguen funcionando**; las nuevas se guardan en R2. No hay que correr ningún SQL.
+1. Crea una cuenta en cloudflare.com (puede pedir registrar una tarjeta; no cobra mientras estés bajo el límite gratis).
+2. En el menú: **R2 Object Storage → Create bucket**. Nombre: `boletas`. Déjalo **privado** (no actives “Public access”).
+3. En R2 → **Manage API Tokens → Create API token**: permiso **Object Read & Write**, limitado al bucket `boletas`. Copia el **Access Key ID** y el **Secret Access Key** (el secreto se muestra una sola vez). El **Account ID** aparece en la página principal de R2.
+4. En Vercel → Settings → Environment Variables agrega: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` y `R2_BUCKET` (= `boletas`). Luego **Redeploy**.
+5. Prueba subiendo una boleta nueva y abriéndola. Cuando todo funcione puedes dejar las variables de Supabase para que las boletas antiguas sigan abriéndose.
